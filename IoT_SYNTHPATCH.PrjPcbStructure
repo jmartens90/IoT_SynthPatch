@@ -1,0 +1,11 @@
+Record=TopLevelDocument|FileName=ADC.SchDoc|SheetNumber=9
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=DAC_LFO.SchDoc|SheetNumber=2
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=DAC_VOCT.SchDoc|SheetNumber=3
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=DISPLAY.SchDoc|SheetNumber=7
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=INPUTS_GATES.SchDoc|SheetNumber=1
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=Main.SchDoc|SheetNumber=4
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=MENU_BUTTONS.SchDoc|SheetNumber=11
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=MIDI.SchDoc|SheetNumber=6
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=MUTE_BUTTONS.SchDoc|SheetNumber=5
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=POWER.SchDoc|SheetNumber=8
+Record=NoMainPathDocument|SourceDocument=ADC.SchDoc|FileName=POWER_CONNECTOR.SchDoc|SheetNumber=10

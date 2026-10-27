@@ -1,0 +1,20 @@
+Removed Member From Class: ClassName=Main Member=
+Change Component Footprint: Designator=C87 Old Footprint=CAPC2013X145X48NL20T23 New Footprint=CAPC2013X145X48NL20T23
+Change Component Footprint: Designator=C88 Old Footprint=CAPC2013X145X48NL20T23 New Footprint=CAPC2013X145X48NL20T23
+Change Component Footprint: Designator=C89 Old Footprint=CAPC2013X145X48NL20T23 New Footprint=CAPC2013X145X48NL20T23
+Change Component Footprint: Designator=R132 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R133 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R134 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R135 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R136 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R137 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R138 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=R139 Old Footprint=FP-RN73R2A-IPC_A New Footprint=FP-RN73R2A-IPC_A
+Change Component Footprint: Designator=IC17 Old Footprint=FP-SOT109-1-MFG New Footprint=FP-SOT109-1-MFG
+Change Component Designator: OldDesignator= NewDesignator=C85
+Change Component Designator: OldDesignator= NewDesignator=R8
+Change Component Designator: OldDesignator= NewDesignator=R77
+Change Component Designator: OldDesignator= NewDesignator=R78
+Added Member To Class: ClassName=Main Member=Component R8 5.1K
+Added Member To Class: ClassName=Main Member=Component R77 22
+Added Member To Class: ClassName=Main Member=Component R78 22
