@@ -32,3 +32,5 @@ hardware/Scripts/*.txt
 firmware/**/.pio/
 firmware/**/.vscode/
 firmware/**/include/secrets.h
+firmware/synthpatch/build/
+firmware/synthpatch/demo.csv

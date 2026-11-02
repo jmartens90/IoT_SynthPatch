@@ -140,9 +140,9 @@ classDiagram
 Only the `engine` task touches the modulators; the other tasks talk to it through the command queue and the
 signals, so no locks are needed on the parameters.
 
-## The app (web or mobile)
+## The app (Qt, desktop + Android)
 
-The plan uses a web dashboard, which also works on a phone. Since the course uses **Qt**, the app could instead
-be a Qt (Qt Quick) application with the `QtMqtt` module. It runs on desktop and Android, and its signals and slots
-map directly onto the MQTT messages. That would reuse even more of the course material. Either way, the module
-itself stays fully usable from the TFT.
+Chosen: a **Qt Quick** application in `app/`, using `QtMqtt` for live data and commands and Qt Charts for
+history (fetched from the backend's REST API). The same code builds for Windows and Android. Its signals and
+slots map directly onto the MQTT messages, and the classes follow the same course concepts as the firmware.
+The module itself stays fully usable from the TFT.
