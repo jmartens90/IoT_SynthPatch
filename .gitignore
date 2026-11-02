@@ -1,0 +1,29 @@
+# Altium backups, logs, previews and caches
+**/History/
+**/Project Logs for */
+**/__Previews/
+*.PrjPcbStructure
+*.Cam
+*.LOG
+*.htm
+*.SchDocPreview
+*.PcbDocPreview
+~$*
+.~lock*
+
+# Old copies and one-off reports
+**/Copy of *
+*ECO_report*
+hardware/board_export.txt
+
+# Script scratch output (exports/plans written by the helper scripts)
+hardware/Scripts/*.txt
+
+# Fabrication extras you don't need to version (keep Gerber/drill zips in Project Outputs)
+*.DRR
+*.EXTREP
+*.REP
+*.LDP
+*.apr
+*.APR_LIB
+*.nsx

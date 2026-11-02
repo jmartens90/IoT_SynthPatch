@@ -1,0 +1,26 @@
+Output: Gerber Files
+Type  : Gerber
+From  : Variant [[No Variations]] of Project [IoT_SYNTHPATCH.PrjPcb]
+   Generated File[IoT_SYNTHPATCH.GTO]
+   Generated File[IoT_SYNTHPATCH.GTP]
+   Generated File[IoT_SYNTHPATCH.GTS]
+   Generated File[IoT_SYNTHPATCH.GTL]
+   Generated File[IoT_SYNTHPATCH.G1]
+   Generated File[IoT_SYNTHPATCH.GP1]
+   Generated File[IoT_SYNTHPATCH.G2]
+   Generated File[IoT_SYNTHPATCH.GP2]
+   Generated File[IoT_SYNTHPATCH.GBL]
+   Generated File[IoT_SYNTHPATCH.GBS]
+   Generated File[IoT_SYNTHPATCH.GBP]
+   Generated File[IoT_SYNTHPATCH.GBO]
+   Generated File[IoT_SYNTHPATCH.GD1]
+   Generated File[IoT_SYNTHPATCH.GG1]
+   Generated File[IoT_SYNTHPATCH.GM]
+   Generated File[IoT_SYNTHPATCH.EXTREP]
+   Generated File[IoT_SYNTHPATCH.REP]
+
+
+Files Generated   : 17
+Documents Printed : 0
+
+Finished Output Generation At 0:04:00 On 2/11/2026

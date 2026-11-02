@@ -1,0 +1,444 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html">
+<style type="text/css">
+		h1, h2, h3, h4, h5, h6 {
+			font-family : segoe ui;
+			color : black;
+			background-color : #EDE7D9;
+			padding: 0.3em;
+		}
+
+		h1 {
+			font-size: 1.2em;
+		}		
+
+		h2 {
+			font-size: 1.2em;
+		}
+
+		body {
+			font-family : segoe ui;
+		}
+
+		td, th {
+			padding: 0.5em;
+			text-align : left;
+			width: 10em;
+		}
+		th {
+			background-color : #EEEEEE;
+
+		}
+		th.column1, td.column1 {
+			text-align: left;
+			width : auto;
+		}
+		table {
+			width : 100%;
+			font-size: 0.9em;
+		}
+
+		.DRC_summary_header {
+			padding-bottom : 0.1em;
+			border : 0px solid black;
+			width: 100%;
+			align: left;
+		}
+
+		.DRC_summary_header_col1,
+		.DRC_summary_header_col2, 
+		.DRC_summary_header_col3 {
+			color : black;
+			font-size:100%;
+			padding : 0em;
+			padding-top : 0.2em;
+			padding-bottom 0.2em;
+			border : 0px solid black;
+			vertical-align: top;
+			text-align: left;
+		}
+
+		.DRC_summary_header_col1 {
+			font-weight: bold;
+			width: 9em;
+		}
+
+		.DRC_summary_header_col2 {
+			width: 0.1em;
+		
+		}
+
+		.DRC_summary_header_col3 {
+			width : auto;
+		}
+
+		.header_holder {
+		    Width = 100%;
+		    border = 0px solid green;
+		    padding = 0;
+		}
+
+
+		.front_matter, .front_matter_column1, .front_matter_column2, .front_matter_column3
+		{
+			left : 0;
+			top : 0;
+			padding: 0em;
+			padding-top : 0.1em;
+			border : 0px solid black;
+			width : 100%;
+			vertical-align: top;
+			text-align: left;
+		}
+
+		.front_matter_column1 {
+			width : 8em;
+			font-weight: bold;
+		}
+
+		.front_matter_column2 {
+			width: 0.1em;
+		}
+
+		.front_matter_column3 {
+			width : auto;
+		}
+
+		.total_column1, .total_column {
+			font-weight : bold;
+		}
+		.total_column1 {
+			text-align : left;
+		}
+		.warning, .error {
+			color : red;
+			font-weight : bold;
+		}
+		tr.onmouseout_odd {
+			background-color : #white;
+		}
+		tr.onmouseout_even { 
+			background-color : #FAFAFA;
+		}
+		tr.onmouseover_odd, tr.onmouseover_even { 
+			background-color : #EEEEEE;
+		} 
+		a:link, a:visited, .q a:link,.q a:active,.q {
+			color: #21489e; 
+		}
+		a:link.callback, a:visited.callback { 
+			color: #21489e;
+		}
+		a:link.customize, a:visited.customize {
+			color: #C0C0C0;
+			position: absolute; 
+			right: 10px;
+		}	
+		p.contents_level1 {
+			font-weight : bold;
+			font-size : 110%;
+			margin : 0.5em;
+		}
+		p.contents_level2 {
+			position : relative;
+			left : 20px;
+			margin : 0.5em;
+		}
+	</style><script type="text/javascript">
+		function coordToMils(coord) {
+			var number = coord / 10000;
+			
+			if (number != number.toFixed(3))
+				number = number.toFixed(3);
+
+			return number + 'mil'
+		}
+
+		function coordToMM(coord) {
+			var number = 0.0254 * coord / 10000;
+			
+			if (number != number.toFixed(4))
+				number = number.toFixed(4);
+			
+			return number + 'mm'
+		}
+	
+		function convertCoord(coordNode, units) {
+			for (var i = 0; i < coordNode.childNodes.length; i++) {
+				coordNode.removeChild(coordNode.childNodes[i]);
+			}
+
+			var coord = coordNode.getAttribute('value');
+			if (coord != null) {
+				if (units == 'mm') {
+					textNode = document.createTextNode(coordToMM(coord));
+					coordNode.appendChild(textNode);
+				} else if (units == 'mil') {
+					textNode = document.createTextNode(coordToMils(coord));		
+					coordNode.appendChild(textNode);	
+				}
+			}
+		}
+	
+		function convertUnits(unitNode, units) {
+			for (var i = 0; i < unitNode.childNodes.length; i++) {
+				unitNode.removeChild(unitNode.childNodes[i]);		
+			}
+		
+			textNode = document.createTextNode(units); 
+			unitNode.appendChild(textNode);
+		}
+	
+		function changeUnits(radio_input, units) {
+			if (radio_input.checked) {
+			
+				var elements = document.getElementsByName('coordinate');
+				if (elements) {
+					for (var i = 0; i < elements.length; i++) {
+						convertCoord(elements[i], units);
+					}
+				}
+	
+				var elements = document.getElementsByName('units');
+				if (elements) {
+					for (var i = 0; i < elements.length; i++) {
+						convertUnits(elements[i], units);
+					}
+				}
+			}
+		}
+	</script><title>Design Rule Verification Report</title>
+</head>
+<body onload=""><img ALT="Altium" src="
+			file://C:\Users\Public\Documents\Altium\AD25\Templates\AD_logo.png
+		"><h1>Design Rule Verification Report</h1>
+<table class="header_holder">
+<td class="column1">
+<table class="front_matter">
+<tr class="front_matter">
+<td class="front_matter_column1">Date:</td>
+<td class="front_matter_column2"></td>
+<td class="front_matter_column3">1/11/2026</td>
+</tr>
+<tr class="front_matter">
+<td class="front_matter_column1">Time:</td>
+<td class="front_matter_column2"></td>
+<td class="front_matter_column3">16:43:39</td>
+</tr>
+<tr class="front_matter">
+<td class="front_matter_column1">Elapsed Time:</td>
+<td class="front_matter_column2"></td>
+<td class="front_matter_column3">00:00:01</td>
+</tr>
+<tr class="front_matter">
+<td class="front_matter_column1">Filename:</td>
+<td class="front_matter_column2"></td>
+<td class="front_matter_column3"><a href="file:///C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc" class="file"><acronym title="C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc">C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc</acronym></a></td>
+</tr>
+</table>
+</td>
+<td class="column2">
+<table class="DRC_summary_header">
+<tr>
+<td class="DRC_summary_header_col1">Warnings:</td>
+<td class="DRC_summary_header_col2"></td>
+<td class="DRC_summary_header_col3">0</td></tr>
+<tr>
+<td class="DRC_summary_header_col1">Rule Violations:</td>
+<td class="DRC_summary_header_col2"></td>
+<td class="DRC_summary_header_col3" style="color : red">24</td></tr>
+</table>
+</td>
+</table><a name="IDWLOFWJRGI3DQCSHK3MHDZ0BFLCL0T14RJN2R0TCX2LSJM5S3B4ML"><h2>Summary</h2></a><table>
+<tr>
+<th class="column1">Warnings</th>
+<th class="column2">Count</th>
+</tr>
+<tr>
+<td style="font-weight : bold; text-align : right" class="column1">Total</td>
+<td style="font-weight : bold" class="column2">0</td>
+</tr>
+</table><br><table>
+<tr>
+<th class="column1">Rule Violations</th>
+<th class="column2">Count</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDEXWXGYEO2PKHMPFQ421SUFLJ2OOSDYEPAYSEHWFDLXFSGNEDFQGC">Clearance Constraint (Gap=0.2mm) (All),(All)</a></td>
+<td class="column2">14</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#ID3G2JNHAAJPT1E2LLLTLD0DAS2HAGPMWPC5WKCXBVFKSQF0BBNUPE">Clearance Constraint (Gap=0.3mm) (InPolygon),(All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDPBYY2QZ3HAKKNX5HADC03B0JGKNEA5K0LOSGY1E5XJAC1RDGJWN">Short-Circuit Constraint (Allowed=No) (All),(All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#ID2M1PZTXSPQRFEIIHK0CPIKK3LPYLI1AYWHJJB1J3GMJRPXUHKJO">Un-Routed Net Constraint ( (All) )</a></td>
+<td class="column2">1</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDA5B41U21VC2TO250YQRTBGPHYKF2ITKWUWSPXDDZDFQSGQM4ROAG">Modified Polygon (Allow modified: No), (Allow shelved: No)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#IDDFZA1JY3GI2CIPVTUFPSTTESMIZC5PPJ0VJNKK1JR423HNH4BDF">Width Constraint (Min=0.15mm) (Max=2mm) (Preferred=0.254mm) (All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDZGSH3UQ2EYO0EDGQBGPCAGC2UEKKCWIUKA1JIIGHKM2C5NJMGEO">Width Constraint (Min=0.3mm) (Max=2mm) (Preferred=0.5mm) (InNetClass('PWR_LV'))</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#IDF1YLUL4KLEBJCLPAHIAEZEAL4GNTWNBFX3YBQRBJW5L0FC4C0WII">Width Constraint (Min=0.4mm) (Max=2mm) (Preferred=0.8mm) (InNetClass('PWR_IN'))</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDZ503ZCOQCEL2OT2IJYY0DI155DYKYWHNOTH2TAG1UHBGK0PEDRWB">Routing Topology Rule(Topology=Shortest) (All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#IDVQMDSREGNHMXOEC2ZJ5RVAXRDJAEGTYV0SZEAQDXWYE5QYVOVGMC">Power Plane Connect Rule(Relief Connect )(Expansion=0.508mm) (Conductor Width=0.254mm) (Air Gap=0.254mm) (Entries=4) (All)</a></td>
+<td class="column2">2</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDR2HQF1UMCHF4LNGYE5B3SRPTKOCCITN2QZM5S1BMTLB12L3Z4PEK">Hole Size Constraint (Min=0.025mm) (Max=2.54mm) (All)</a></td>
+<td class="column2">2</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#IDM0YFQ53L4TZLI1YRFD4ZA1PUTLGBCSTZ4A1YDTNIO4MYF011DZ0E">Hole To Hole Clearance (Gap=0.5mm) (All),(All)</a></td>
+<td class="column2">1</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDW5BFUAA2HX0EDNFTXKFWOFV0QHNP1GXTBANCMFR1FBEQRAMASRM">Minimum Solder Mask Sliver (Gap=0.1mm) (All),(All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#IDT0LLE541J0PUFS2R1PKLOXXDCJATNRS5A45NZLTPHNIG2UY5T1E">Silk To Solder Mask (Clearance=0.15mm) (IsPad),(All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#IDJJDHMG2KAIKFPDO5UC2JA4XN3O1DNIRB4DLLJPIM2IP105THIR1B">Silk to Silk (Clearance=0.254mm) (All),(All)</a></td>
+<td class="column2">1</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#ID3VKQVBGWPROWP3TY1QWI0MVOD2SNGDI2RGR4BOJKOJHTIICRPQP">Net Antennae (Tolerance=0mm) (All)</a></td>
+<td class="column2">3</td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="#ID1IUQL0QSGILKESUJF4XL11UQFNZJYFBSLFDDKBGCGZJ2FBKUEF3I">Board Clearance Constraint (Gap=0mm) (All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="#IDRVSO41YDN343OPGO1MDZ5QTDMFMHQ5WFYGSW01BBJX0A33SQF5LF">Height Constraint (Min=0mm) (Max=25.4mm) (Prefered=12.7mm) (All)</a></td>
+<td class="column2">0</td>
+</tr>
+<tr>
+<td style="font-weight : bold; text-align : right" class="column1">Total</td>
+<td style="font-weight : bold" class="column2">24</td>
+</tr>
+</table><br><a name="IDEXWXGYEO2PKHMPFQ421SUFLJ2OOSDYEPAYSEHWFDLXFSGNEDFQGC"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Clearance Constraint (Gap=0.2mm) (All),(All)</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2196.819mil|Location2.X=2205.943mil|Location1.Y=3383.096mil|Location2.Y=3392.22mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2196.819mil|Location2.X=2205.943mil|Location1.Y=3383.096mil|Location2.Y=3392.22mil|Absolute=True">Clearance Constraint: (0.19995mm (7.87201mil) &lt; 0.2mm (7.874mil)) Between Pad IC4-10(-280.287mm,-465.015mm) on Bottom Layer And Track (-280.764mm,-464.18mm)(-280.177mm,-463.592mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4159.96mil|Location2.Y=4169.084mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4159.96mil|Location2.Y=4169.084mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-280.575mm,-444.512mm)(-280.411mm,-444.348mm) on Bottom Layer And Track (-281.035mm,-444.744mm)(-281.035mm,-444.512mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4159.96mil|Location2.Y=4169.084mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4159.96mil|Location2.Y=4169.084mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-280.575mm,-444.512mm)(-280.411mm,-444.348mm) on Bottom Layer And Track (-281.23mm,-444.317mm)(-281.035mm,-444.512mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4150.828mil|Location2.Y=4159.952mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4150.828mil|Location2.Y=4159.952mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-280.575mm,-444.935mm)(-280.575mm,-444.512mm) on Bottom Layer And Track (-281.035mm,-444.744mm)(-281.035mm,-444.512mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4159.96mil|Location2.Y=4169.084mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4159.96mil|Location2.Y=4169.084mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-280.575mm,-444.935mm)(-280.575mm,-444.512mm) on Bottom Layer And Track (-281.23mm,-444.317mm)(-281.035mm,-444.512mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4150.828mil|Location2.Y=4159.952mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2185.139mil|Location2.X=2194.263mil|Location1.Y=4150.828mil|Location2.Y=4159.952mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-280.575mm,-444.935mm)(-280.575mm,-444.512mm) on Bottom Layer And Track (-291.541mm,-455.25mm)(-281.035mm,-444.744mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2182.486mil|Location2.X=2191.61mil|Location1.Y=4144.426mil|Location2.Y=4153.55mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=2182.486mil|Location2.X=2191.61mil|Location1.Y=4144.426mil|Location2.Y=4153.55mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-281.035mm,-444.744mm)(-281.035mm,-444.512mm) on Bottom Layer And Track (-291.35mm,-455.71mm)(-280.575mm,-444.935mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1768.852mil|Location2.X=1777.976mil|Location1.Y=3730.791mil|Location2.Y=3739.916mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1768.852mil|Location2.X=1777.976mil|Location1.Y=3730.791mil|Location2.Y=3739.916mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-291.35mm,-455.71mm)(-280.575mm,-444.935mm) on Bottom Layer And Track (-291.541mm,-455.25mm)(-281.035mm,-444.744mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1768.852mil|Location2.X=1777.976mil|Location1.Y=3730.791mil|Location2.Y=3739.916mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1768.852mil|Location2.X=1777.976mil|Location1.Y=3730.791mil|Location2.Y=3739.916mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-291.35mm,-455.71mm)(-280.575mm,-444.935mm) on Bottom Layer And Track (-297.605mm,-455.25mm)(-291.541mm,-455.25mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1762.45mil|Location2.X=1771.574mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1762.45mil|Location2.X=1771.574mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-291.541mm,-455.25mm)(-281.035mm,-444.744mm) on Bottom Layer And Track (-297.605mm,-455.71mm)(-291.35mm,-455.71mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1762.45mil|Location2.X=1771.574mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1762.45mil|Location2.X=1771.574mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-297.605mm,-455.25mm)(-291.541mm,-455.25mm) on Bottom Layer And Track (-297.605mm,-455.71mm)(-291.35mm,-455.71mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1523.688mil|Location2.X=1532.812mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1523.688mil|Location2.X=1532.812mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-297.605mm,-455.25mm)(-291.541mm,-455.25mm) on Bottom Layer And Track (-297.7mm,-455.805mm)(-297.605mm,-455.71mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1523.688mil|Location2.X=1532.812mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1523.688mil|Location2.X=1532.812mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-297.605mm,-455.71mm)(-291.35mm,-455.71mm) on Bottom Layer And Track (-297.7mm,-455.155mm)(-297.605mm,-455.25mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1523.688mil|Location2.X=1532.812mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1523.688mil|Location2.X=1532.812mil|Location1.Y=3728.139mil|Location2.Y=3737.263mil|Absolute=True">Clearance Constraint: (0.18mm &lt; 0.2mm) Between Track (-297.7mm,-455.155mm)(-297.605mm,-455.25mm) on Bottom Layer And Track (-297.7mm,-455.805mm)(-297.605mm,-455.71mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br><a name="ID2M1PZTXSPQRFEIIHK0CPIKK3LPYLI1AYWHJJB1J3GMJRPXUHKJO"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Un-Routed Net Constraint ( (All) )</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1460.794mil|Location2.X=1512.605mil|Location1.Y=3618.794mil|Location2.Y=3670.606mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1460.794mil|Location2.X=1512.605mil|Location1.Y=3618.794mil|Location2.Y=3670.606mil|Absolute=True">Un-Routed Net Constraint: Via (-298.661mm,-457.716mm) from Top Layer to Bottom Layer Dead Copper - Net Not Assigned.</acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br><a name="IDVQMDSREGNHMXOEC2ZJ5RVAXRDJAEGTYV0SZEAQDXWYE5QYVOVGMC"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Power Plane Connect Rule(Relief Connect )(Expansion=0.508mm) (Conductor Width=0.254mm) (Air Gap=0.254mm) (Entries=4) (All)</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1499.094mil|Location2.X=1570.906mil|Location1.Y=4574.095mil|Location2.Y=4645.905mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1499.094mil|Location2.X=1570.906mil|Location1.Y=4574.095mil|Location2.Y=4645.905mil|Absolute=True">Starved Thermal on GND: Via (-297.434mm,-433.197mm) from Top Layer to Bottom Layer. Blocked 2 out of 4 entries.</acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1499.094mil|Location2.X=1570.906mil|Location1.Y=4574.095mil|Location2.Y=4645.905mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1499.094mil|Location2.X=1570.906mil|Location1.Y=4574.095mil|Location2.Y=4645.905mil|Absolute=True">Starved Thermal on GND2: Via (-297.434mm,-433.197mm) from Top Layer to Bottom Layer. Blocked 2 out of 4 entries.</acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br><a name="IDR2HQF1UMCHF4LNGYE5B3SRPTKOCCITN2QZM5S1BMTLB12L3Z4PEK"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Hole Size Constraint (Min=0.025mm) (Max=2.54mm) (All)</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=3451.028mil|Location2.X=3613.696mil|Location1.Y=3720.044mil|Location2.Y=3882.712mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=3451.028mil|Location2.X=3613.696mil|Location1.Y=3720.044mil|Location2.Y=3882.712mil|Absolute=True">Hole Size Constraint: (4.1mm &gt; 2.54mm) Pad ENC1-1(-246.701mm,-453.736mm) on Multi-Layer Actual Slot Hole Height = 4.1mm</acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=4033.706mil|Location2.X=4196.374mil|Location1.Y=3720.044mil|Location2.Y=3882.712mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=4033.706mil|Location2.X=4196.374mil|Location1.Y=3720.044mil|Location2.Y=3882.712mil|Absolute=True">Hole Size Constraint: (4.1mm &gt; 2.54mm) Pad ENC1-2(-231.901mm,-453.736mm) on Multi-Layer Actual Slot Hole Height = 4.1mm</acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br><a name="IDM0YFQ53L4TZLI1YRFD4ZA1PUTLGBCSTZ4A1YDTNIO4MYF011DZ0E"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Hole To Hole Clearance (Gap=0.5mm) (All),(All)</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=4194.874mil|Location2.X=4215.809mil|Location1.Y=2814.489mil|Location2.Y=2835.424mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=4194.874mil|Location2.X=4215.809mil|Location1.Y=2814.489mil|Location2.Y=2835.424mil|Absolute=True">Hole To Hole Clearance Constraint: (0.49998mm (19.68434mil) &lt; 0.5mm (19.685mil)) Between Via (-229.489mm,-478.155mm) from Top Layer to Bottom Layer And Via (-229.726mm,-478.919mm) from Top Layer to Bottom Layer </acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br><a name="IDJJDHMG2KAIKFPDO5UC2JA4XN3O1DNIRB4DLLJPIM2IP105THIR1B"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Silk to Silk (Clearance=0.254mm) (All),(All)</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1598.342mil|Location2.X=1609.592mil|Location1.Y=1628.345mil|Location2.Y=1639.595mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1598.342mil|Location2.X=1609.592mil|Location1.Y=1628.345mil|Location2.Y=1639.595mil|Absolute=True">Silk To Silk Clearance Constraint: (0.2533mm (9.9718mil) &lt; 0.254mm (10mil)) Between Text "R93" (-294.749mm,-508.602mm) on Bottom Overlay And Track (-295.986mm,-508.975mm)(-295.646mm,-508.975mm) on Bottom Overlay Silk Text to Silk Clearance [0.253mm]</acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br><a name="ID3VKQVBGWPROWP3TY1QWI0MVOD2SNGDI2RGR4BOJKOJHTIICRPQP"><table>
+<tr>
+<th style="text-align : left" colspan="1" class="rule">Net Antennae (Tolerance=0mm) (All)</th>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=4141.5mil|Location2.X=4165.089mil|Location1.Y=2561.68mil|Location2.Y=2595.88mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=4141.5mil|Location2.X=4165.089mil|Location1.Y=2561.68mil|Location2.Y=2595.88mil|Absolute=True">Net Antennae: Track (-231.974mm,-484.048mm)(-231.013mm,-485.008mm) on Top Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_even" onmouseover="className = 'onmouseover_even'" onmouseout="className = 'onmouseout_even'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=3515.766mil|Location2.X=3614.177mil|Location1.Y=4062.13mil|Location2.Y=4222.216mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=3515.766mil|Location2.X=3614.177mil|Location1.Y=4062.13mil|Location2.Y=4222.216mil|Absolute=True">Net Antennae: Track (-246.034mm,-446.024mm)(-244.475mm,-446.024mm) on Top Layer </acronym></a><br></td>
+</tr>
+<tr class="onmouseout_odd" onmouseover="className = 'onmouseover_odd'" onmouseout="className = 'onmouseout_odd'">
+<td class="column1"><a href="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1703.056mil|Location2.X=1801.467mil|Location1.Y=3502.13mil|Location2.Y=3662.216mil|Absolute=True" class="callback"><acronym title="dxpprocess://PCB:Zoom?document=C:\Users\12502784\Documents\IoTSynthPatch\IoT_SynthPatch\hardware\IoT_SYNTHPATCH.PcbDoc;viewname=PCBEditor;Action=AREA_DYNAMICZOOM|Location1.X=1703.056mil|Location2.X=1801.467mil|Location1.Y=3502.13mil|Location2.Y=3662.216mil|Absolute=True">Net Antennae: Track (-292.076mm,-460.248mm)(-290.322mm,-460.248mm) on Bottom Layer </acronym></a><br></td>
+</tr>
+</table></a><hr color="#EEEEEE"><a href="#top" style="font-size: 0.9em">Back to top</a><br><br></body>
+</html>
