@@ -27,3 +27,8 @@ hardware/Scripts/*.txt
 *.apr
 *.APR_LIB
 *.nsx
+
+# Firmware build output and local secrets
+firmware/**/.pio/
+firmware/**/.vscode/
+firmware/**/include/secrets.h
