@@ -80,7 +80,7 @@ can fail. **Discuss this list with the lecturer before building them.**
 | # | Nice-to-have | How it shows up in this project | Effort |
 |---|---|---|---|
 | 1 | Self-designed PCB | Two-board 6-layer stack, Altium sources + Gerbers in `hardware/` | Done |
-| 2 | CI/CD | GitHub Actions builds every firmware (this PR); later also backend tests + image build | Done / small |
+| 2 | CI/CD | GitHub Actions already builds the firmware. To count it needs automatic **tests** (`pio test -e native` unit tests: SHT45 CRC/conversion, volts→DAC codes, 165 bit map, MIDI parser, frequency estimator) and/or automatic **deploy** (GitHub Release with firmware.bin on a version tag, backend Docker image) | Small |
 | 3 | Multiple sensor types | SHT45 (°C, %RH) + audio ADC (Hz, Vpp) + gate inputs (BPM from clock) | Small |
 | 4 | Bidirectional communication | Dashboard → MQTT `/cmd` → ESP, ESP → telemetry; acknowledged with `/state` | Small |
 | 5 | Historic values shown | History charts with time range picker | Small |
