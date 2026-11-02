@@ -47,7 +47,7 @@ flowchart LR
 
 | Choice | Why |
 |---|---|
-| ESP32-S3-WROOM-1 N16R2 | WiFi, two cores (LFO engine on one, network on the other), enough RAM for a web UI, native USB |
+| ESP32-S3-WROOM-1 **N16R2** | WiFi, two cores (LFO engine on one, network on the other), native USB. Specifically the R2 variant: its 2 MB **quad** PSRAM only uses the internal flash/PSRAM pins, so IO35, IO36 and IO37 stay free for the PCM1808 I2S (MCLK, BCK, LRCK). The octal-PSRAM versions (R8, R16V) reserve IO35–IO37 |
 | SHT45 on STEMMA QT | Calibrated digital sensor (±0.1 °C), CRC-checked I2C, plug-in cable, no analog error |
 | PCM1808 (24-bit, 48 kHz) | Samples the oscillator directly, so the ESP can measure frequency to a fraction of a cent; ESP is I2S master |
 | TFT + encoder on the module | Settings can be changed without the app; the app is an extra, not a dependency |
