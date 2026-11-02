@@ -4,7 +4,7 @@ ESP32-S3-WROOM-1-N16R2 firmware for IoT_SYNTHPATCH, built with [PlatformIO](http
 
 | Folder | What |
 |---|---|
-| [`bringup/`](bringup) | Hardware test shell used with [docs/bringup-test-plan.md](../docs/bringup-test-plan.md). One image, one command per subsystem. |
+| [`bringup/`](bringup) | Hardware test shell used with [docs/bringup-test-plan.md](../docs/bringup-test-plan.md). One image, one command per subsystem. Breadboard dev kit wiring: [bringup/BREADBOARD.md](bringup/BREADBOARD.md) |
 | [`synthpatch/`](synthpatch) | The application. Stage A1 (LFO/envelope engine, plain C++17, runs and tests on a PC) is in; ESP32 integration, TFT, sensors and MQTT follow. |
 
 ## Install

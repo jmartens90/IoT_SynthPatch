@@ -24,10 +24,11 @@ void begin() {
   digitalWrite(PIN_165_CP, LOW);
   pinMode(PIN_165_Q7, INPUT);
 
-  // External 10k pull-ups + RC filter on the board
-  pinMode(PIN_ENC_A, INPUT);
-  pinMode(PIN_ENC_B, INPUT);
-  pinMode(PIN_ENC_SW, INPUT);
+  // The PCB has external 10k pull-ups + RC filters. The internal pull-ups (~45k) are switched on
+  // too, so a bare encoder on a breadboard dev kit also works; on the PCB they're harmless.
+  pinMode(PIN_ENC_A, INPUT_PULLUP);
+  pinMode(PIN_ENC_B, INPUT_PULLUP);
+  pinMode(PIN_ENC_SW, INPUT_PULLUP);
   encPrev = (digitalRead(PIN_ENC_A) << 1) | digitalRead(PIN_ENC_B);
   attachInterrupt(PIN_ENC_A, encIsr, CHANGE);
   attachInterrupt(PIN_ENC_B, encIsr, CHANGE);
