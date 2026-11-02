@@ -14,7 +14,7 @@ Built for the IoT course project. Rubric mapping, architecture and roadmap:
 |---|---|
 | [`hardware/`](hardware) | Altium projects: main board `IoT_SYNTHPATCH.PrjPcb`, analog board `ANALOG/`, Gerbers in `Project Outputs*`, Mouser BOM |
 | [`firmware/`](firmware) | ESP32-S3 firmware (PlatformIO). `bringup/` = hardware test shell |
-| [`docs/`](docs) | [Bring-up test plan](docs/bringup-test-plan.md), [IoT project plan](docs/iot-project-plan.md) |
+| [`docs/`](docs) | [Bring-up test plan](docs/bringup-test-plan.md), [IoT project plan](docs/iot-project-plan.md), [Firmware architecture + UML](docs/firmware-architecture.md) |
 | `backend/` | (planned) Docker compose: Mosquitto, API, PostgreSQL, dashboard |
 
 ## Hardware at a glance
