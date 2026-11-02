@@ -1,9 +1,8 @@
 # IoT_SYNTHPATCH
 
-A WiFi-connected Eurorack module: an ESP32-S3 generates 8 LFO/envelope control voltages and
-2 V/oct pitch outputs that you can adjust over HTTP and MQTT, reads MIDI, gates and buttons, and
-measures oscillators in the rack (frequency and level via a PCM1808 ADC) together with temperature
-and humidity (SHT45), so drifting analog oscillators can be visualised and retuned.
+A WiFi-connected Eurorack module: an ESP32-S3 generates LFO and envelope control voltages that you
+set from a web/mobile dashboard or directly on the module's TFT screen and encoder. An SHT45 sensor
+logs the temperature, which the dashboard graphs together with the output voltages.
 
 Built for the IoT course project. Rubric mapping, architecture and roadmap:
 [docs/iot-project-plan.md](docs/iot-project-plan.md).
