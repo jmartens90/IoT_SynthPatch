@@ -1,8 +1,9 @@
 # IoT_SYNTHPATCH
 
 A WiFi-connected Eurorack module: an ESP32-S3 generates LFO and envelope control voltages that you
-set from a web/mobile dashboard or directly on the module's TFT screen and encoder. An SHT45 sensor
-logs the temperature, which the dashboard graphs together with the output voltages.
+set from a web/mobile dashboard or directly on the module's TFT screen and encoder. It also measures
+the frequency of an oscillator patched into its PCM1808 input, tells played notes apart from tuning
+drift, and graphs that drift together with the temperature from an SHT45 sensor.
 
 Built for the IoT course project. Rubric mapping, architecture and roadmap:
 [docs/iot-project-plan.md](docs/iot-project-plan.md).

@@ -134,7 +134,7 @@ Use a current limit of ~150 mA per rail for the first power-on.
 | # | Do | Pass |
 |---|---|---|
 | 9.1 | Check jumpers J25/J27 (gain 1 = 100k, gain 0.27 = 27k) and set it: `adc gain 0.27`. | Saved |
-| 9.2 | VCO (or phone tone generator, 440 Hz) into J26. `adc watch`. | J26 shows ≈ 440 Hz, Vpp near the source level. J28 stays near 0 |
+| 9.2 | VCO (or phone tone generator, 440 Hz) into J26. `adc watch`. | J26 shows ≈ 440 Hz, note A4, cents near 0, Vpp near the source level. J28 stays near 0 |
 | 9.3 | Same into J28. | Left/right not swapped (if swapped, note it in `pins.h`) |
 | 9.4 | `tft scope`. | Stable waveform on the display with Hz and Vpp |
 | 9.5 | Note: the input is AC coupled, so slow LFOs and DC CV read near 0. | Expected |

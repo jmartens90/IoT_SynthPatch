@@ -345,12 +345,20 @@ static void cmdAdc(String *a, int n) {
   }
   delay(200);
   bool watch = n > 1 && a[1] == "watch";
-  Serial.println("  ch    freq [Hz]   Vpp [V]   Vrms [V]   dBFS    DC");
+  Serial.println("  ch    freq [Hz]   note  cents   Vpp [V]   Vrms [V]   dBFS    DC");
   do {
     for (int ch = 0; ch < 2; ch++) {
       auto s = audio::stats(ch);
-      Serial.printf("  %s  %9.2f   %7.3f   %8.4f   %6.1f  %+.4f  (blk %u)\n", ch ? "J28" : "J26", s.freqHz, s.vpp,
-                    s.vrms, s.dbfs, s.dcRaw, s.blocks);
+      const char *note = "-";
+      float off = 0;
+      if (s.freqHz > 8.0f) {
+        float c = 1200.0f * log2f(s.freqHz / 440.0f) + 6900.0f;  // MIDI note * 100
+        int n = (int)lroundf(c / 100.0f);
+        off = c - n * 100.0f;
+        if (n >= 0 && n <= 127) note = midi::noteName(n);
+      }
+      Serial.printf("  %s  %9.2f   %-4s  %+5.1f   %7.3f   %8.4f   %6.1f  %+.4f  (blk %u)\n", ch ? "J28" : "J26",
+                    s.freqHz, note, off, s.vpp, s.vrms, s.dbfs, s.dcRaw, s.blocks);
     }
     if (watch)
       for (int i = 0; i < 5 && !Serial.available(); i++) delay(100);
