@@ -105,8 +105,7 @@ static void command(const String &line) {
 
 void setup() {
   Serial.begin(115200);
-  // Native USB: text sent before the PC opens the port is lost, so wait up to 3 s for it.
-  for (uint32_t t0 = millis(); !Serial && millis() - t0 < 3000;) delay(10);
+  delay(500);
   Serial.println("\nSynthPatch prototype");
   app.begin();
   Serial.print(app.hardwareReport().c_str());
