@@ -32,7 +32,7 @@ void App::begin() {
   }
   if (voct_.begin()) {
     Preferences p;  // V/oct calibration survives a reboot (NVS flash)
-    p.begin("voct", true);
+    p.begin("voct", false);  // read-write: creates the namespace on first boot (no NOT_FOUND error)
     if (p.isKey("cpv")) voct_.setCalibration(p.getFloat("cpv"), p.getFloat("off"));
     p.end();
     voct_.setVolts(0.0f);

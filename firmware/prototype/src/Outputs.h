@@ -94,18 +94,18 @@ class Ad5693Output final : public synth::CvOutput {
   uint16_t code_ = 0;
 };
 
-// PWM on a GPIO, 12 bits at ~19.5 kHz. Add a 10k + 1 uF RC low-pass to get a DC voltage
+// PWM on a GPIO, 11 bits at ~19.5 kHz (12 bits would need a faster timer clock than the S3 has). Add a 10k + 1 uF RC low-pass to get a DC voltage
 // (0..3.3 V, ~10 ms smoothing: fine for an envelope, and an LED on the pin shows it directly).
 class PwmOutput final : public synth::CvOutput {
  public:
   PwmOutput(int pin, int channel) : pin_(pin), ch_(channel) {}
   void begin() {
-    ledcSetup(ch_, 19531, 12);
+    ledcSetup(ch_, 19531, 11);
     ledcAttachPin(pin_, ch_);
   }
   void setVolts(float v) override {
     last_ = clamp(v);
-    ledcWrite(ch_, static_cast<uint32_t>(last_ / 3.3f * 4095.0f + 0.5f));
+    ledcWrite(ch_, static_cast<uint32_t>(last_ / 3.3f * 2047.0f + 0.5f));
   }
   float minVolts() const override { return 0.0f; }
   float maxVolts() const override { return 3.3f; }

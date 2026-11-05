@@ -32,7 +32,7 @@ void WebUi::forgetWifi() {
 
 void WebUi::begin(Print &log) {
   Preferences p;
-  p.begin("wifi", true);
+  p.begin("wifi", false);  // read-write: creates the namespace on first boot (no NOT_FOUND error)
   String ssid = p.getString("ssid", "");
   String pass = p.getString("pass", "");
   p.end();
