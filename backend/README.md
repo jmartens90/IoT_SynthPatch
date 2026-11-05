@@ -65,3 +65,36 @@ because the database file is in `backend/data/` on your laptop, outside the cont
 
 Add a password file to Mosquitto (`mosquitto_passwd`), set `allow_anonymous false`, and give the
 ESP the user/password with `mqtt set <ip> 1883 <user> <pass>`. Keep the passwords out of git.
+
+## Raspberry Pi (without Docker)
+
+A Pi 2 or newer is enough: Mosquitto, the Python backend and SQLite together use well under
+100 MB of RAM. On a Pi 2 (32-bit, 1 GB) install them directly instead of with Docker, which is
+slower to build there. A Pi 2 has no WiFi: use Ethernet to your router, or a USB WiFi dongle.
+
+1. Flash **Raspberry Pi OS Lite** with Raspberry Pi Imager. In its settings set user `pi`, a
+   password, your WiFi (if you have a dongle) and enable SSH.
+2. Log in (`ssh pi@raspberrypi.local`) and install:
+   ```
+   sudo apt update
+   sudo apt install -y mosquitto git python3-venv
+   sudo cp /etc/mosquitto/mosquitto.conf /etc/mosquitto/mosquitto.conf.bak
+   echo -e "listener 1883\nallow_anonymous true" | sudo tee /etc/mosquitto/conf.d/synthpatch.conf
+   sudo systemctl restart mosquitto
+   ```
+3. Get the code and the Python libraries:
+   ```
+   git clone -b prototype-setup https://github.com/jmartens90/IoT_SynthPatch.git
+   python3 -m venv ~/synthpatch-venv
+   ~/synthpatch-venv/bin/pip install -r IoT_SynthPatch/backend/app/requirements.txt
+   ```
+4. Start it at every boot:
+   ```
+   sudo cp IoT_SynthPatch/backend/pi/synthpatch-backend.service /etc/systemd/system/
+   sudo systemctl enable --now synthpatch-backend
+   systemctl status synthpatch-backend        (should say "active (running)")
+   ```
+5. On the ESP: `mqtt set raspberrypi.local` doesn't work (the ESP can't look up .local names for
+   MQTT), so use the Pi's IP from `hostname -I`. Open `http://<pi IP>:8000` on any PC or phone.
+
+Logs: `journalctl -u synthpatch-backend -f`. After a `git pull`: `sudo systemctl restart synthpatch-backend`.

@@ -1,0 +1,18 @@
+# systemd service: starts the backend at boot on a Raspberry Pi and restarts it if it crashes.
+# Install: see backend/README.md, "Raspberry Pi (without Docker)".
+[Unit]
+Description=SynthPatch backend (MQTT logger + history page)
+After=network-online.target mosquitto.service
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/IoT_SynthPatch/backend/app
+Environment=MQTT_HOST=localhost
+Environment=DB_PATH=/home/pi/synthpatch.db
+ExecStart=/home/pi/synthpatch-venv/bin/python -u main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
