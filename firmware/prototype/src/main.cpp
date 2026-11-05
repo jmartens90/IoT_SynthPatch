@@ -83,8 +83,10 @@ static void command(const String &line) {
     ESP.restart();
   } else if (c == "note" && w.size() == 2) {
     app.setVoctVolts(App::noteToVolts(arg(1).toInt()));
+    Serial.printf("  %.4f V -> code %u\n", App::noteToVolts(arg(1).toInt()), app.voct().code());
   } else if (c == "voct" && arg(1) == "code") {
-    app.setVoctCode(arg(2).toInt());
+    bool ok = app.setVoctCode(arg(2).toInt());
+    Serial.printf("  AD5693R code %ld: %s\n", arg(2).toInt(), ok ? "ACK" : "NO ACK (check wiring/address/power)");
   } else if (c == "voct" && arg(1) == "cal" && arg(2) == "show") {
     Serial.printf("  %.2f codes/V, offset %.1f codes\n", app.voct().codesPerVolt(), app.voct().offset());
   } else if (c == "voct" && arg(1) == "cal" && arg(2) == "reset") {
@@ -94,6 +96,7 @@ static void command(const String &line) {
     Serial.println(ok ? "  calibrated and saved" : "  volts1 and volts2 must differ");
   } else if (c == "voct" && w.size() == 2) {
     app.setVoctVolts(arg(1).toFloat());
+    Serial.printf("  %.4f V -> code %u\n", arg(1).toFloat(), app.voct().code());
   } else if (c == "tone") {
     app.setToneHz(arg(1).toFloat());
   } else if (c == "gate") {

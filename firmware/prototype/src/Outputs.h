@@ -50,8 +50,12 @@ class Ad5693Output final : public synth::CvOutput {
   Ad5693Output(uint8_t addr, bool gain2) : addr_(addr), gain2_(gain2) { resetCalibration(); }
 
   bool begin() {
+    auto &bus = I2cBus::instance();
+    const uint8_t reset[3] = {0x40, 0x80, 0x00};  // control register DB15 = software reset
+    bus.write(addr_, reset, 3);
+    delay(2);
     const uint8_t ctrl[3] = {0x40, static_cast<uint8_t>(gain2_ ? 0x08 : 0x00), 0x00};
-    return ok_ = I2cBus::instance().write(addr_, ctrl, 3);
+    return ok_ = bus.write(addr_, ctrl, 3);
   }
   bool ok() const { return ok_; }
 
@@ -59,11 +63,12 @@ class Ad5693Output final : public synth::CvOutput {
     last_ = clamp(v);
     writeCode(static_cast<uint16_t>(std::clamp(last_ * codesPerVolt_ + offset_, 0.0f, 65535.0f) + 0.5f));
   }
-  void writeCode(uint16_t code) {
+  // Returns false if the chip did not acknowledge (wrong address, wiring, or not powered).
+  bool writeCode(uint16_t code) {
     code_ = code;
-    if (!ok_) return;
+    if (!ok_) return false;
     const uint8_t b[3] = {0x30, static_cast<uint8_t>(code >> 8), static_cast<uint8_t>(code & 0xFF)};
-    I2cBus::instance().write(addr_, b, 3);
+    return I2cBus::instance().write(addr_, b, 3);
   }
   float minVolts() const override { return 0.0f; }
   float maxVolts() const override { return gain2_ ? 5.0f : 2.5f; }
