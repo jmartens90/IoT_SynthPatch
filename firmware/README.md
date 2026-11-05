@@ -5,6 +5,7 @@ ESP32-S3-WROOM-1-N16R2 firmware for IoT_SYNTHPATCH, built with [PlatformIO](http
 | Folder | What |
 |---|---|
 | [`bringup/`](bringup) | Hardware test shell used with [docs/bringup-test-plan.md](../docs/bringup-test-plan.md). One image, one command per subsystem. Breadboard dev kit wiring: [bringup/BREADBOARD.md](bringup/BREADBOARD.md) |
+| [`prototype/`](prototype) | Course demo on a bare ESP32-S3 dev kit while the PCB parts are delayed: MCP4725 + AD5693R I2C DACs, SHT45/DS18B20/internal temperature, GPIO frequency counter, web GUI + MQTT. Same engine as the app. See [prototype/README.md](prototype/README.md) |
 | [`synthpatch/`](synthpatch) | The application. Stage A1 (LFO/envelope engine, plain C++17, runs and tests on a PC) is in; ESP32 integration, TFT, sensors and MQTT follow. |
 
 ## Install

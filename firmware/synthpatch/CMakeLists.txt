@@ -13,6 +13,7 @@ add_library(engine
   lib/engine/Lfo.cpp
   lib/engine/Envelope.cpp
   lib/engine/Engine.cpp
+  lib/engine/PitchTracker.cpp
 )
 target_include_directories(engine PUBLIC lib/engine)
 if(MSVC)

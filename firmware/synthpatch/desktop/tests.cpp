@@ -9,6 +9,7 @@
 #include "CvOutput.h"
 #include "Engine.h"
 #include "ModulatorFactory.h"
+#include "PitchTracker.h"
 
 using namespace synth;
 
@@ -118,6 +119,45 @@ static void testFactory() {
   CHECK(!ModulatorFactory::create("envelope", "d")->setShape("sine"));  // envelopes have no shape
 }
 
+// Pitch tracker, fed with generated frequencies: 20 blocks per second (50 ms each).
+static float hzAt(float cents) { return 440.0f * std::pow(2.0f, (cents - 6900.0f) / 1200.0f); }
+
+static void testPitchTracker() {
+  CHECK(near(PitchTracker::hzToCents(440.0f), 6900.0f));
+  CHECK(PitchTracker::noteName(69) == "A4" && PitchTracker::noteName(60) == "C4");
+
+  PitchTracker pt;
+  int events = 0, lastOld = -2, lastNew = -2;
+  pt.noteChanged.connect([&](int o, int n) { events++; lastOld = o; lastNew = n; });
+
+  pt.addBlock(0.0f, 0.05f);
+  CHECK(pt.state() == PitchTracker::State::NoInput);
+
+  // A4 held for 2 s, 3 cents sharp: one note event (none -> A4), offset +3.
+  for (int i = 0; i < 40; i++) pt.addBlock(hzAt(6903.0f), 0.05f);
+  CHECK(pt.state() == PitchTracker::State::Stable);
+  CHECK(events == 1 && lastOld == -1 && lastNew == 69);
+  CHECK(near(pt.centsOff(), 3.0f, 0.1f));
+
+  // Play C5: a jump of 300 cents -> one event A4 -> C5 once it is stable.
+  for (int i = 0; i < 40; i++) pt.addBlock(hzAt(7203.0f), 0.05f);
+  CHECK(events == 2 && lastOld == 69 && lastNew == 72);
+
+  // Slow drift: +1 cent per second for 60 s. No new note, drift goes up, rate is positive.
+  float c = 7203.0f;
+  for (int i = 0; i < 1200; i++) {
+    c += 0.05f;
+    pt.addBlock(hzAt(c), 0.05f);
+  }
+  CHECK(events == 2);
+  CHECK(pt.note() == 72);
+  CHECK(pt.drift() > 20.0f && pt.drift() < 63.0f);  // lags behind the raw +63 (30 s average)
+  CHECK(pt.driftPerMinute() > 20.0f);
+
+  // Drifting past +50 cents does not invent a note change: offset keeps counting from C5.
+  CHECK(pt.centsOff() > 50.0f);
+}
+
 int main() {
   testWaveforms();
   testParamClamp();
@@ -125,6 +165,7 @@ int main() {
   testEnvelope();
   testEngineCommands();
   testFactory();
+  testPitchTracker();
   if (failures) {
     std::printf("%d of %d checks FAILED\n", failures, checks);
     return 1;

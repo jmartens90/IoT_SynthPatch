@@ -16,7 +16,7 @@ lesson: every file starts with a comment explaining the concept it shows.
 cd firmware/synthpatch
 cmake -B build
 cmake --build build
-./build/tests      # should print: all 27 checks passed
+./build/tests      # should print: all 39 checks passed
 ./build/demo       # ASCII plot of the LFO and envelope, plus demo.csv
 ```
 
@@ -36,6 +36,7 @@ Open `demo.csv` in Excel and make a line chart to see the LFO and the envelope c
 | 8 | `lib/engine/Command.h` | Command pattern, `struct`, static helper functions | design patterns (command) |
 | 9 | `lib/engine/ModulatorFactory.h` | Factory pattern, `static` member function | design patterns (factory) |
 | 10 | `lib/engine/Engine.h/.cpp` | ownership with `vector<unique_ptr<>>`, polymorphic loop, `std::queue`, `std::mutex` + `lock_guard` (RAII) | dynamic memory, containers |
+| 10b | `lib/engine/PitchTracker.h/.cpp` | nested `struct` with default values, `std::deque` sliding window, `static` helpers, Signal for note events | containers |
 | 11 | `desktop/demo.cpp` | using it all: lambdas as slots, posting commands | |
 | 12 | `desktop/tests.cpp` | automatic tests, macros | |
 
