@@ -22,7 +22,7 @@ static void help() {
       "  mqtt set <host> [port] [user] [pass]   save broker and reboot\n"
       "  mqtt off\n"
       "  note <midi>                    V/oct to a note (60 = C4 = 2 V)\n"
-      "  voct <volts> | voct code <0-65535>\n"
+      "  voct <volts> | voct code <0-65535> | voct gain 1|2\n"
       "  voct cal <code1> <volts1> <code2> <volts2> | voct cal show | voct cal reset\n"
       "  tone <hz>                      test tone on GPIO 17 (0 = off)\n"
       "  gate on|off");
@@ -84,6 +84,9 @@ static void command(const String &line) {
   } else if (c == "note" && w.size() == 2) {
     app.setVoctVolts(App::noteToVolts(arg(1).toInt()));
     Serial.printf("  %.4f V -> code %u\n", App::noteToVolts(arg(1).toInt()), app.voct().code());
+  } else if (c == "voct" && arg(1) == "gain" && w.size() == 3) {
+    bool ok = app.setVoctGain2(arg(2) == "2");
+    Serial.printf("  AD5693R gain %s: %s\n", arg(2) == "2" ? "2 (0..5 V)" : "1 (0..2.5 V)", ok ? "ACK" : "NO ACK");
   } else if (c == "voct" && arg(1) == "code") {
     bool ok = app.setVoctCode(arg(2).toInt());
     Serial.printf("  AD5693R code %ld: %s\n", arg(2).toInt(), ok ? "ACK" : "NO ACK (check wiring/address/power)");

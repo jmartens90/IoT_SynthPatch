@@ -63,6 +63,7 @@ class App {
   void playNote(int midi, bool on, const char *source);   // V/oct + envelope gate
   void setVoctVolts(float v) { voct_.setVolts(v); }
   bool setVoctCode(uint16_t c) { return voct_.writeCode(c); }
+  bool setVoctGain2(bool on) { return voct_.setGain2(on); }
   bool calibrateVoct(uint16_t c1, float v1, uint16_t c2, float v2);
   void resetVoctCalibration();
   void setToneHz(float hz) { tone_.setHz(hz); }

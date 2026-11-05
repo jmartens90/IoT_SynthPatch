@@ -54,9 +54,16 @@ class Ad5693Output final : public synth::CvOutput {
     const uint8_t reset[3] = {0x40, 0x80, 0x00};  // control register DB15 = software reset
     bus.write(addr_, reset, 3);
     delay(2);
-    const uint8_t ctrl[3] = {0x40, static_cast<uint8_t>(gain2_ ? 0x08 : 0x00), 0x00};
-    return ok_ = bus.write(addr_, ctrl, 3);
+    return ok_ = writeControl();
   }
+
+  // Control register: DB11 = gain (0: 0..2.5 V, 1: 0..5 V), DB12 = 0 keeps the 2.5 V reference on.
+  bool setGain2(bool on) {
+    gain2_ = on;
+    resetCalibration();
+    return writeControl();
+  }
+  bool gain2() const { return gain2_; }
   bool ok() const { return ok_; }
 
   void setVolts(float v) override {
@@ -91,6 +98,11 @@ class Ad5693Output final : public synth::CvOutput {
   float last() const { return last_; }
 
  private:
+  bool writeControl() {
+    const uint8_t ctrl[3] = {0x40, static_cast<uint8_t>(gain2_ ? 0x08 : 0x00), 0x00};
+    return I2cBus::instance().write(addr_, ctrl, 3);
+  }
+
   uint8_t addr_;
   bool gain2_;
   bool ok_ = false;
