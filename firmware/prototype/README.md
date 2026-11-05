@@ -8,7 +8,7 @@ PCB chips:
 |---|---|---|
 | DAC124S085 → LFO jack | **MCP4725** 0x60, 0…3.3 V | `Mcp4725Output` |
 | DAC124S085 → envelope jack | 2nd **MCP4725** 0x61, or PWM + RC on GPIO 2 | `Mcp4725Output` / `PwmOutput` |
-| DAC8562 → V/oct | **AD5693R** 0x4C, 16-bit, internal 2.5 V ref, 0…2.5 V | `Ad5693Output` |
+| DAC8562 → V/oct | **AD5693R** 0x4C, 16-bit, internal 2.5 V ref, gain 2, 0…3.3 V | `Ad5693Output` |
 | SHT45 on J21 | SHT45, or **DS18B20**, or **DHT11**, or the ESP32's internal sensor (auto-detected) | `TemperatureSensor::detect()` |
 | PCM1808 audio ADC | **frequency counter** on GPIO 13 (0…3.3 V square wave) | `FrequencyInput` |
 | TFT + encoder | (not yet; the web page has the same settings) | |
@@ -62,9 +62,9 @@ with your finger or a hair dryer and the drift line moves with the temperature.
 Measure the AD5693R output with a multimeter at two codes, then enter both points:
 
 ```
-voct code 13107        -> measure, e.g. 0.499 V
-voct code 52428        -> measure, e.g. 1.998 V
-voct cal 13107 0.499 52428 1.998
+voct code 6554         -> measure, e.g. 0.499 V
+voct code 39322        -> measure, e.g. 2.998 V
+voct cal 6554 0.499 39322 2.998
 voct cal show
 note 60                -> C4 = 2.000 V (0 V = C2)
 ```

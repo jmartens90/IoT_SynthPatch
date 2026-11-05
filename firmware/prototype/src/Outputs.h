@@ -50,10 +50,6 @@ class Ad5693Output final : public synth::CvOutput {
   Ad5693Output(uint8_t addr, bool gain2) : addr_(addr), gain2_(gain2) { resetCalibration(); }
 
   bool begin() {
-    auto &bus = I2cBus::instance();
-    const uint8_t reset[3] = {0x40, 0x80, 0x00};  // control register DB15 = software reset
-    bus.write(addr_, reset, 3);
-    delay(2);
     return ok_ = writeControl();
   }
 
@@ -78,7 +74,9 @@ class Ad5693Output final : public synth::CvOutput {
     return I2cBus::instance().write(addr_, b, 3);
   }
   float minVolts() const override { return 0.0f; }
-  float maxVolts() const override { return gain2_ ? 5.0f : 2.5f; }
+  // Gain 2 = 0..5 V in theory, but the output can't go above the chip's own supply (3.3 V on the
+  // Adafruit board, which has its own regulator).
+  float maxVolts() const override { return gain2_ ? 3.3f : 2.5f; }
 
   // Two measured points (code1 -> volts1, code2 -> volts2) give the real slope and offset.
   bool calibrate(uint16_t code1, float volts1, uint16_t code2, float volts2) {
@@ -91,7 +89,7 @@ class Ad5693Output final : public synth::CvOutput {
     codesPerVolt_ = codesPerVolt;
     offset_ = offset;
   }
-  void resetCalibration() { setCalibration(65536.0f / maxVolts(), 0.0f); }
+  void resetCalibration() { setCalibration(65536.0f / (gain2_ ? 5.0f : 2.5f), 0.0f); }
   float codesPerVolt() const { return codesPerVolt_; }
   float offset() const { return offset_; }
   uint16_t code() const { return code_; }

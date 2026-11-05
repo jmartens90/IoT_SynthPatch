@@ -14,14 +14,14 @@ Same pins as J21 on the PCB.
 | **SHT45** (STEMMA QT) | 3V3 | GND | 38 | 14 | 0x44 | |
 | **MCP4725** #1, LFO | **3V3** | GND | 38 | 14 | 0x60 (A0 to GND) | VOUT = LFO, 0…3.3 V |
 | MCP4725 #2, envelope (optional) | 3V3 | GND | 38 | 14 | 0x61 (A0 to VCC) | VOUT = envelope |
-| **AD5693R**, V/oct | 3V3 or 5V | GND | 38 | 14 | 0x4C (A0 to GND) | VOUT = V/oct, 0…2.5 V |
+| **AD5693R**, V/oct | 3V3 or 5V | GND | 38 | 14 | 0x4C (A0 to GND) | VOUT = V/oct, 0…3.3 V |
 
 * Run the MCP4725 from 3.3 V: its output then never goes above 3.3 V, so you can wire it straight
   back into the ADC input to graph it.
 * AD5693R (Adafruit): the output is the **VOUT hole** of the 2-hole terminal footprint (3.5 mm
   pitch), not A0 or LDAC (those are inputs). The board regulates its own 3.3 V, so the chip's
-  range is 0…2.5 V with the internal reference (gain 1, the default in `include/config.h`):
-  0 V = C2, 2.5 V = F#4. For 0…5 V add an op-amp stage with gain 2 (like the PCB).
+  output stops at ~3.3 V even with gain 2 (the default in `include/config.h`): 0 V = C2,
+  3.3 V ≈ A#4. For 0…5 V add an op-amp stage with gain 2 (like the PCB).
 * Breakouts usually have I2C pull-ups already. With three or four boards in parallel that's fine at 400 kHz.
 
 ## Envelope without a second MCP4725

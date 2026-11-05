@@ -20,10 +20,10 @@ constexpr uint8_t ADDR_AD5693R = 0x4C;      // A0 low (0x4E with A0 high)
 
 // DAC supply voltages. The MCP4725 output range is 0..VDD.
 // The AD5693R uses its internal 2.5 V reference: gain 1 = 0..2.5 V (2.5 octaves), gain 2 = 0..5 V.
-// The Adafruit breakout has its own 3.3 V regulator, so the chip runs on 3.3 V whatever VIN is
-// and gain 2 can't go above 3.3 V. Keep gain 1; for 5 octaves add an op-amp with gain 2 after it.
+// The Adafruit breakout has its own 3.3 V regulator, so the chip runs on 3.3 V whatever VIN is:
+// with gain 2 the output tops out at ~3.3 V (C2..A#4). For 5 octaves add an op-amp with gain 2.
 constexpr float MCP4725_VDD = 3.3f;
-constexpr bool AD5693R_GAIN2 = false;
+constexpr bool AD5693R_GAIN2 = true;
 
 // Envelope fallback when there is no 2nd MCP4725: PWM + RC filter (10k + 1 uF) on this pin.
 constexpr int PIN_ENV_PWM = 2;
