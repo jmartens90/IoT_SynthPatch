@@ -30,10 +30,10 @@ void MqttLink::forget() {
 void MqttLink::begin(Print &log) {
   Preferences p;
   p.begin("mqtt", false);  // read-write: creates the namespace on first boot (no NOT_FOUND error)
-  host_ = p.getString("host", "");
+  host_ = (p.isKey("host") ? p.getString("host") : String());
   port_ = p.getUShort("port", 1883);
-  user_ = p.getString("user", "");
-  pass_ = p.getString("pass", "");
+  user_ = (p.isKey("user") ? p.getString("user") : String());
+  pass_ = (p.isKey("pass") ? p.getString("pass") : String());
   p.end();
   enabled_ = !host_.isEmpty();
   if (!enabled_) {

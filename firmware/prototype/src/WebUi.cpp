@@ -33,8 +33,8 @@ void WebUi::forgetWifi() {
 void WebUi::begin(Print &log) {
   Preferences p;
   p.begin("wifi", false);  // read-write: creates the namespace on first boot (no NOT_FOUND error)
-  String ssid = p.getString("ssid", "");
-  String pass = p.getString("pass", "");
+  String ssid = (p.isKey("ssid") ? p.getString("ssid") : String());
+  String pass = (p.isKey("pass") ? p.getString("pass") : String());
   p.end();
 
   WiFi.setHostname("synthpatch");
