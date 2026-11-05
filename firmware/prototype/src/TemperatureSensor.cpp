@@ -1,6 +1,7 @@
 #include "TemperatureSensor.h"
 
 #include <Arduino.h>
+#include <DHT.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
@@ -60,6 +61,30 @@ bool Ds18b20Sensor::read(float &celsius) {
   return true;
 }
 
+// ---------- DHT11 ----------
+
+struct DhtSensor::Impl {
+  DHT dht{static_cast<uint8_t>(cfg::PIN_DHT), DHT11};  // change DHT11 to DHT22 for a DHT22
+};
+
+DhtSensor::DhtSensor() : impl_(std::make_unique<Impl>()) {}
+DhtSensor::~DhtSensor() = default;
+
+bool DhtSensor::begin() {
+  impl_->dht.begin();
+  delay(1100);  // the sensor needs ~1 s after power-up before the first reading
+  float t;
+  return read(t);  // no valid reading = no DHT on the pin
+}
+
+bool DhtSensor::read(float &celsius) {
+  float t = impl_->dht.readTemperature();
+  if (std::isnan(t)) return false;
+  celsius = t;
+  rh_ = impl_->dht.readHumidity();
+  return true;
+}
+
 // ---------- internal ----------
 
 bool InternalSensor::read(float &celsius) {
@@ -73,6 +98,8 @@ std::unique_ptr<TemperatureSensor> TemperatureSensor::detect() {
   std::unique_ptr<TemperatureSensor> s = std::make_unique<Sht45Sensor>();
   if (s->begin()) return s;
   s = std::make_unique<Ds18b20Sensor>();  // the old object is deleted here, automatically
+  if (s->begin()) return s;
+  s = std::make_unique<DhtSensor>();
   if (s->begin()) return s;
   s = std::make_unique<InternalSensor>();
   s->begin();

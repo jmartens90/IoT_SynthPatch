@@ -4,7 +4,7 @@
 // ------------------------------------------
 // The rest of the firmware only calls read(). Which sensor is behind it is decided once, at
 // startup, by detect(): the SHT45 if it answers on I2C, else a DS18B20 if one is on its pin,
-// else the ESP32's own chip sensor. The code that logs and graphs the temperature never
+// else a DHT11, else the ESP32's own chip sensor. The code that logs and graphs the temperature never
 // changes when you swap sensors; detect() is the only place that knows the concrete classes.
 // Adding a BME280 = one more class + one more line in detect().
 #pragma once
@@ -51,6 +51,24 @@ class Ds18b20Sensor final : public TemperatureSensor {
  private:
   struct Impl;                  // "pimpl": the OneWire/Dallas objects are hidden in the .cpp
   std::unique_ptr<Impl> impl_;
+};
+
+// DHT11 (+-2 C, 1 C steps) or DHT22 (+-0.5 C): one data pin. Good enough to show the
+// temperature curve; too coarse to correlate with drift precisely. The library reads at most
+// every 2 s and returns the cached value in between.
+class DhtSensor final : public TemperatureSensor {
+ public:
+  DhtSensor();
+  ~DhtSensor() override;
+  bool begin() override;
+  bool read(float &celsius) override;
+  const char *name() const override { return "DHT11"; }
+  float humidity() const override { return rh_; }
+
+ private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+  float rh_ = NAN;
 };
 
 // The ESP32-S3's built-in sensor. Measures the CHIP (it rises with WiFi load and sits several

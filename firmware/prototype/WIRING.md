@@ -1,5 +1,8 @@
 # Prototype wiring (ESP32-S3 DevKitC)
 
+Works on N8, N8R8, N16R8, ...: none of these pins are used by flash or PSRAM (the R8 octal
+PSRAM takes GPIO 35–37, which the prototype leaves alone).
+
 All signals are **3.3 V**. Never put more than 3.3 V on a GPIO.
 
 ## I2C bus (shared): SDA = GPIO 38, SCL = GPIO 14
@@ -29,8 +32,12 @@ GPIO 2 to GND also shows the envelope as brightness.
 ## Temperature without the SHT45
 
 DS18B20: VDD to 3V3, GND to GND, DQ to **GPIO 21**, with **4.7 kΩ from DQ to 3V3**. Detected
-automatically when no SHT45 answers. With neither, the ESP32's internal sensor is used (chip
-temperature, only as a last resort).
+automatically when no SHT45 answers.
+
+DHT11 (3-pin breakout): + to 3V3, - to GND, S/OUT to **GPIO 16** (a bare 4-pin DHT11 also needs
+10 kΩ from data to 3V3). Used when there is no SHT45 and no DS18B20. It only has 1 °C steps.
+
+With none of these, the ESP32's internal sensor is used (chip temperature, only as a last resort).
 
 ## Frequency input (instead of the PCM1808): GPIO 13
 
@@ -61,4 +68,5 @@ The **BOOT** button on the dev kit (GPIO 0) gates the envelope.
 | 13 | frequency input |
 | 17 | test tone output |
 | 21 | DS18B20 |
+| 16 | DHT11 |
 | 0 | BOOT button = gate |

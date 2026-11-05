@@ -9,7 +9,7 @@ PCB chips:
 | DAC124S085 → LFO jack | **MCP4725** 0x60, 0…3.3 V | `Mcp4725Output` |
 | DAC124S085 → envelope jack | 2nd **MCP4725** 0x61, or PWM + RC on GPIO 2 | `Mcp4725Output` / `PwmOutput` |
 | DAC8562 → V/oct | **AD5693R** 0x4C, 16-bit, internal 2.5 V ref, 0…5 V | `Ad5693Output` |
-| SHT45 on J21 | SHT45, or **DS18B20**, or the ESP32's internal sensor (auto-detected) | `TemperatureSensor::detect()` |
+| SHT45 on J21 | SHT45, or **DS18B20**, or **DHT11**, or the ESP32's internal sensor (auto-detected) | `TemperatureSensor::detect()` |
 | PCM1808 audio ADC | **frequency counter** on GPIO 13 (0…3.3 V square wave) | `FrequencyInput` |
 | TFT + encoder | (not yet; the web page has the same settings) | |
 

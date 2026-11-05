@@ -28,6 +28,8 @@ constexpr int PIN_ENV_PWM = 2;
 
 // Temperature fallback 1: DS18B20 data pin (4.7k pull-up to 3V3).
 constexpr int PIN_DS18B20 = 21;
+// Temperature fallback 2: DHT11 / DHT22 data pin (most breakouts have the pull-up on board).
+constexpr int PIN_DHT = 16;
 
 // Frequency input (instead of the PCM1808): a 0..3.3 V square wave, e.g. a 40106/555 oscillator.
 constexpr int PIN_FREQ_IN = 13;
