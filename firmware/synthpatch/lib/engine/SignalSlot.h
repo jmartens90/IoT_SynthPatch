@@ -1,4 +1,7 @@
-// Signal.h - a tiny version of Qt's signals and slots.
+// SignalSlot.h - a tiny version of Qt's signals and slots.
+//
+// (Not called Signal.h: Windows file names ignore case, so a "Signal.h" in the include path
+// would be picked up instead of the C library's <signal.h> and break the ESP32 build.)
 //
 // C++ lesson: OBSERVER PATTERN, TEMPLATES, std::function, LAMBDAS
 // ---------------------------------------------------------------

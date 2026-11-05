@@ -32,7 +32,7 @@ Open `demo.csv` in Excel and make a line chart to see the LFO and the envelope c
 | 4 | `lib/engine/Lfo.h/.cpp` | child class, constructor overloading + delegation, composition (owns a Waveform), `std::move`, `std::array` | basics (constructor), dynamic memory |
 | 5 | `lib/engine/Envelope.h/.cpp` | `enum class`, state machine with `switch` | |
 | 6 | `lib/engine/CvOutput.h` | interface, Adapter pattern | design patterns (adapter) |
-| 7 | `lib/engine/Signal.h` | Observer pattern (Qt signals/slots without Qt), templates, `std::function`, lambdas | OOP structures (signals and slots) |
+| 7 | `lib/engine/SignalSlot.h` | Observer pattern (Qt signals/slots without Qt), templates, `std::function`, lambdas | OOP structures (signals and slots) |
 | 8 | `lib/engine/Command.h` | Command pattern, `struct`, static helper functions | design patterns (command) |
 | 9 | `lib/engine/ModulatorFactory.h` | Factory pattern, `static` member function | design patterns (factory) |
 | 10 | `lib/engine/Engine.h/.cpp` | ownership with `vector<unique_ptr<>>`, polymorphic loop, `std::queue`, `std::mutex` + `lock_guard` (RAII) | dynamic memory, containers |

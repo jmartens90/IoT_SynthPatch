@@ -22,7 +22,7 @@
 #include "Command.h"
 #include "CvOutput.h"
 #include "Modulator.h"
-#include "Signal.h"
+#include "SignalSlot.h"
 
 namespace synth {
 

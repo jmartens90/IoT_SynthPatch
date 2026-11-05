@@ -15,7 +15,7 @@
 //
 // C++ lesson: a plain class with a nested `struct Config` holding DEFAULT MEMBER VALUES, a
 // std::deque as a sliding window (push at the back, pop at the front), `static` helper
-// functions that need no object, and the Signal (observer) from Signal.h for events.
+// functions that need no object, and the Signal (observer) from SignalSlot.h for events.
 // No Arduino code, so it is tested on the PC with generated frequencies (desktop/tests.cpp)
 // and used unchanged on the ESP32 with a GPIO frequency counter now and the PCM1808 later.
 #pragma once
@@ -23,7 +23,7 @@
 #include <deque>
 #include <string>
 
-#include "Signal.h"
+#include "SignalSlot.h"
 
 namespace synth {
 
