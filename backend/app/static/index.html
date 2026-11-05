@@ -1,0 +1,114 @@
+<!doctype html>
+<!-- History dashboard served by the backend. It reads the database through /api/... and
+     sends commands to the module through /api/cmd (backend -> MQTT -> ESP). -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SynthPatch history</title>
+<style>
+body{font:15px system-ui,sans-serif;margin:0;background:#15171a;color:#e8e8e8}
+header{padding:10px 16px;background:#1f2328;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:18px;margin:0 12px 0 0} h2{font-size:15px;margin:0 0 8px;color:#9fb3c8}
+main{display:grid;gap:12px;padding:12px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:#1f2328;border-radius:8px;padding:12px} .wide{grid-column:1/-1}
+canvas{width:100%;height:300px;display:block}
+.badge{padding:2px 8px;border-radius:10px;background:#555} .online{background:#2a8a3a} .offline{background:#a33}
+label{display:grid;grid-template-columns:90px 1fr 70px;align-items:center;gap:8px;margin:4px 0}
+select,button{font:inherit} #ev{font-size:13px;color:#bbb;max-height:200px;overflow:auto}
+small{color:#889}
+</style></head><body>
+<header><h1>SynthPatch history</h1>
+ device <select id="dev"></select> <span id="status" class="badge">-</span>
+ range <select id="hours"><option value="0.25">15 min</option><option value="1" selected>1 hour</option>
+ <option value="6">6 hours</option><option value="24">24 hours</option><option value="168">7 days</option></select>
+ <select id="series"><option value="drift_cents">drift (cents)</option><option value="hz">frequency (Hz)</option>
+ <option value="adc_v">ADC (V)</option><option value="lfo_v">LFO out (V)</option></select>
+ <small id="info"></small></header>
+<main>
+<section class="card wide"><h2>Temperature (orange) and <span id="sname"></span> (blue), note changes as grey lines</h2>
+ <canvas id="chart"></canvas></section>
+<section class="card"><h2>Send to the module (via MQTT)</h2>
+ <label>LFO shape<select id="shape"><option>sine</option><option>triangle</option><option>saw</option><option>square</option></select><span></span></label>
+ <label>LFO rate<input id="rate" type="range" min="-4.6" max="3.9" step="any" value="0"><span id="ratev"></span></label>
+ <label>attack<input id="attack" type="range" min="-6.9" max="2.3" step="any" value="-3"><span id="attackv"></span></label>
+ <label>release<input id="release" type="range" min="-6.9" max="2.3" step="any" value="-0.2"><span id="releasev"></span></label>
+ <small>Sliders are logarithmic. Changes arrive at the ESP and come back as a new "settings" row.</small></section>
+<section class="card"><h2>Note changes</h2><div id="ev"></div></section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const noteName = n => n == null || n < 0 ? "-" : NAMES[n % 12] + (Math.floor(n / 12) - 1);
+const getJson = async url => (await fetch(url)).json();
+let rows = [], events = [];
+
+async function loadDevices() {
+  const devs = await getJson("/api/devices");
+  const cur = $("dev").value;
+  $("dev").innerHTML = devs.map(d => `<option ${d.device == cur ? "selected" : ""}>${d.device}</option>`).join("");
+  const d = devs.find(x => x.device == $("dev").value);
+  $("status").textContent = d ? d.status : "no data yet";
+  $("status").className = "badge " + (d ? d.status : "");
+}
+
+async function load() {
+  await loadDevices();
+  const dev = $("dev").value || "proto", h = $("hours").value;
+  rows = await getJson(`/api/telemetry?device=${dev}&hours=${h}`);
+  events = await getJson(`/api/events?device=${dev}&hours=${h}`);
+  $("info").textContent = `${rows.length} samples stored in this range`;
+  $("ev").innerHTML = events.slice().reverse().map(e =>
+    `${new Date(e.ts * 1000).toLocaleTimeString()}: ${noteName(e.from_note)} → <b>${noteName(e.to_note)}</b>`).join("<br>");
+  draw();
+}
+
+function draw() {
+  const key = $("series").value;
+  $("sname").textContent = $("series").selectedOptions[0].text;
+  const c = $("chart"), g = c.getContext("2d"), r = devicePixelRatio;
+  const W = c.width = c.clientWidth * r, H = c.height = 300 * r;
+  g.fillStyle = "#111"; g.fillRect(0, 0, W, H);
+  if (rows.length < 2) return;
+  const t0 = rows[0].ts, t1 = rows[rows.length - 1].ts;
+  const X = t => 50 * r + (t - t0) / Math.max(1, t1 - t0) * (W - 100 * r);
+  g.strokeStyle = "#555";
+  events.forEach(e => { g.beginPath(); g.moveTo(X(e.ts), 0); g.lineTo(X(e.ts), H); g.stroke(); });
+  const line = (k, colour, side) => {
+    const vals = rows.map(x => x[k]).filter(v => v != null);
+    if (!vals.length) return;
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (hi - lo < 1e-3) { lo -= 0.5; hi += 0.5; }
+    const Y = v => H - 12 * r - (v - lo) / (hi - lo) * (H - 24 * r);
+    g.strokeStyle = colour; g.lineWidth = 2 * r; g.beginPath();
+    let pen = false;
+    rows.forEach(x => {
+      if (x[k] == null) { pen = false; return; }  // gap in the data: lift the pen
+      pen ? g.lineTo(X(x.ts), Y(x[k])) : g.moveTo(X(x.ts), Y(x[k])); pen = true;
+    });
+    g.stroke();
+    g.fillStyle = colour; g.font = `${11 * r}px system-ui`; g.textAlign = side;
+    const tx = side == "left" ? 2 : W - 2;
+    g.fillText(hi.toPrecision(4), tx, 14 * r); g.fillText(lo.toPrecision(4), tx, H - 4);
+  };
+  line("temp_c", "#f0a020", "left");
+  line(key, "#4ea1ff", "right");
+  g.fillStyle = "#889"; g.textAlign = "left";
+  g.fillText(new Date(t0 * 1000).toLocaleTimeString(), 50 * r, H - 4);
+  g.textAlign = "right"; g.fillText(new Date(t1 * 1000).toLocaleTimeString(), W - 50 * r, H - 4);
+}
+
+// Commands go to the backend, which publishes them on synthpatch/<device>/cmd.
+const send = cmd => fetch(`/api/cmd?device=${$("dev").value || "proto"}`,
+  { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cmd) });
+$("shape").onchange = e => send({ target: "lfo1", shape: e.target.value });
+for (const [id, target, unit] of [["rate", "lfo1", "Hz"], ["attack", "env1", "s"], ["release", "env1", "s"]]) {
+  const show = () => $(id + "v").textContent = Math.exp(+$(id).value).toPrecision(3) + " " + unit;
+  show();
+  $(id).oninput = show;
+  $(id).onchange = () => send({ target, name: id, value: Math.exp(+$(id).value) });
+}
+
+$("dev").onchange = $("hours").onchange = load;
+$("series").onchange = draw;
+addEventListener("resize", draw);
+load();
+setInterval(load, 5000);  // refresh every 5 s
+</script></body></html>

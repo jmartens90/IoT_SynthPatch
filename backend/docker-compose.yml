@@ -1,0 +1,30 @@
+# The whole backend in one command:   docker compose up -d
+# Stop it:                            docker compose down
+# See the logs:                       docker compose logs -f
+#
+# Two containers:
+#   mosquitto  the MQTT broker. The ESP and the backend both connect to it on port 1883.
+#   backend    our own Python program: stores every MQTT message in a SQLite database and
+#              serves the history page on http://localhost:8000
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"                 # <port on your laptop>:<port inside the container>
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped         # start again after a crash or a reboot of the laptop
+
+  backend:
+    build: ./app                    # built from app/Dockerfile
+    environment:
+      MQTT_HOST: mosquitto          # inside compose, containers find each other by service name
+      DB_PATH: /data/synthpatch.db
+    volumes:
+      - ./data:/data                # the database file lives in backend/data on your laptop,
+                                    # so it survives "docker compose down"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mosquitto
+    restart: unless-stopped

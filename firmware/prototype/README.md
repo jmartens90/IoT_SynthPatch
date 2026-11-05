@@ -30,8 +30,8 @@ Wiring: [WIRING.md](WIRING.md).
 * **Recovery:** WiFi auto-reconnect, MQTT retry every 5 s, access-point fallback "SynthPatch" when
   there is no WiFi (works in a classroom).
 
-Still to add for the full rubric: the small backend (Mosquitto + a logger into a database, `docker
-compose`), which stores the MQTT telemetry as history.
+**Backend + storage:** [`backend/`](../../backend) runs Mosquitto + a logger into SQLite + a history
+page with `docker compose up` on your laptop.
 
 ## Build and flash
 
