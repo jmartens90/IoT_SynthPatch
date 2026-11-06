@@ -51,6 +51,9 @@ void WebUi::begin(Print &log) {
   }
   if (WiFi.status() == WL_CONNECTED) {
     log.printf("WiFi: http://synthpatch.local  or  http://%s\n", WiFi.localIP().toString().c_str());
+    // Real time from the internet (NTP), in Belgian time with summer/winter time. The ESP keeps
+    // it up to date by itself from now on. Needed for the time stamps in the flash log.
+    configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.google.com");
   } else {
     apMode_ = true;
     WiFi.mode(WIFI_AP);
@@ -97,6 +100,8 @@ void WebUi::routes() {
     d["tone_hz"] = l.toneHz;
     d["events_total"] = app_.noteEventCount();
     d["uptime"] = millis() / 1000;
+    d["time"] = App::timeValid() ? static_cast<uint32_t>(time(nullptr)) : 0;
+    d["log_count"] = app_.log().count();
     d["wifi"] = apMode_ ? "AP SynthPatch" : WiFi.SSID();
     d["rssi"] = apMode_ ? 0 : WiFi.RSSI();
     d["mqtt"] = mqtt.connected();
@@ -106,7 +111,7 @@ void WebUi::routes() {
   server.on("/api/history", HTTP_GET, [this] {
     // Built by hand instead of with JsonDocument: 600 samples would need ~50 kB of RAM as a
     // document, as text it is streamed into one String.
-    String t, temp, hz, drift, volts;
+    String t, temp, rh, hz, drift, volts;
     auto add = [](String &s, float v, int dec) {
       if (s.length()) s += ',';
       if (std::isnan(v)) s += "null"; else s += String(v, dec);
@@ -115,13 +120,65 @@ void WebUi::routes() {
       if (t.length()) t += ',';
       t += x.t;
       add(temp, x.tempC, 2);
+      add(rh, x.rh, 1);
       add(hz, x.hz, 2);
       add(drift, x.drift, 2);
       add(volts, x.volts, 3);
     });
     server.send(200, "application/json",
-                "{\"t\":[" + t + "],\"temp\":[" + temp + "],\"hz\":[" + hz + "],\"drift\":[" + drift +
-                    "],\"volts\":[" + volts + "]}");
+                "{\"t\":[" + t + "],\"temp\":[" + temp + "],\"rh\":[" + rh + "],\"hz\":[" + hz +
+                    "],\"drift\":[" + drift + "],\"volts\":[" + volts + "]}");
+  });
+
+  // Stored history from flash: /api/log?hours=336&points=800 (336 h = 14 days).
+  // Same field names as /api/history, but t is real time (unix seconds) and long ranges are
+  // averaged down to at most `points` points, so the browser gets ~40 kB instead of megabytes.
+  server.on("/api/log", HTTP_GET, [this] {
+    float hours = server.hasArg("hours") ? server.arg("hours").toFloat() : 24;
+    uint32_t points = server.hasArg("points") ? server.arg("points").toInt() : 800;
+    uint32_t since = App::timeValid() ? time(nullptr) - static_cast<uint32_t>(hours * 3600) : 0;
+    String t, temp, rh, hz, drift, volts;
+    auto add = [](String &s, float v, int dec) {
+      if (s.length()) s += ',';
+      if (std::isnan(v)) s += "null"; else s += String(v, dec);
+    };
+    app_.log().forEach(since, constrain(points, 10u, 3000u), [&](const LogPoint &p) {
+      if (t.length()) t += ',';
+      t += p.t;
+      add(temp, p.tempC, 2);
+      add(rh, p.rh, 1);
+      add(hz, p.hz, 2);
+      add(drift, p.drift, 2);
+      add(volts, p.volts, 3);
+    });
+    server.send(200, "application/json",
+                "{\"t\":[" + t + "],\"temp\":[" + temp + "],\"rh\":[" + rh + "],\"hz\":[" + hz +
+                    "],\"drift\":[" + drift + "],\"volts\":[" + volts + "]}");
+  });
+
+  // Full-resolution CSV of the flash log: /log-full.csv?days=14. Sent in pieces ("chunked"),
+  // because 14 days = 120 000 lines would not fit in RAM as one String.
+  server.on("/log-full.csv", HTTP_GET, [this] {
+    float days = server.hasArg("days") ? server.arg("days").toFloat() : 14;
+    uint32_t since = App::timeValid() ? time(nullptr) - static_cast<uint32_t>(days * 86400) : 0;
+    server.sendHeader("Content-Disposition", "attachment; filename=synthpatch-log-full.csv");
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200, "text/csv", "");
+    String chunk = "time,temperature_c,humidity_rh,frequency_hz,drift_cents,adc_v\n";
+    auto num = [](float v, int dec) { return std::isnan(v) ? String("") : String(v, dec); };
+    app_.log().forEach(since, UINT32_MAX, [&](const LogPoint &p) {
+      char when[24];
+      time_t tt = p.t;
+      strftime(when, sizeof(when), "%Y-%m-%d %H:%M:%S", localtime(&tt));
+      chunk += String(when) + "," + num(p.tempC, 2) + "," + num(p.rh, 1) + "," + num(p.hz, 2) + "," +
+               num(p.drift, 2) + "," + num(p.volts, 3) + "\n";
+      if (chunk.length() > 4000) {
+        server.sendContent(chunk);
+        chunk = "";
+      }
+    });
+    server.sendContent(chunk);
+    server.sendContent("");  // empty chunk = end of the response
   });
 
   server.on("/api/events", HTTP_GET, [this] {

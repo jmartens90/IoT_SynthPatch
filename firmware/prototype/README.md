@@ -25,13 +25,39 @@ Wiring: [WIRING.md](WIRING.md).
 * **Dashboard + interaction:** web page at `http://synthpatch.local` with live values, a 10-minute
   chart (temperature + drift / Hz / volts, note changes as lines), LFO and envelope controls, gate
   button and a keyboard. CSV download of the log.
-* **IoT communication:** HTTP REST on the device, plus MQTT telemetry / events / retained settings /
+* **IoT communication:** HTTP REST API on the device (the chosen protocol, see the table below).
+  Optional, off by default: MQTT telemetry / events / retained settings /
   commands with a last-will "offline" status (see `src/MqttLink.h` for the topics).
 * **Recovery:** WiFi auto-reconnect, MQTT retry every 5 s, access-point fallback "SynthPatch" when
   there is no WiFi (works in a classroom).
 
-**Backend + storage:** [`backend/`](../../backend) runs Mosquitto + a logger into SQLite + a history
-page with `docker compose up` on your laptop.
+**Backend + storage on the device itself:** every 10 s one 16-byte record (time, temperature,
+humidity, Hz, drift, volts) goes into a ring-buffer file `/log.bin` in the ESP32's flash
+(LittleFS, 400 000 records = ~46 days, `src/DataLog.h`). It survives reboots and power cuts; when
+full, the oldest record is overwritten. The web page shows it with a range picker (live, 1 h,
+24 h, 7 d, 14 d, 46 d), and `/log-full.csv?days=14` downloads it. No server or Raspberry Pi needed.
+(The optional [`backend/`](../../backend) with Mosquitto + SQLite is for later.)
+
+Logging needs the real time, which comes from NTP, so the ESP must be on your home WiFi
+(`wifi set`). In access-point mode nothing is stored (there is no clock).
+
+### REST API
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/live` | current values (JSON), incl. `time` and `log_count` |
+| `GET /api/history` | last 10 minutes from RAM, one point per second |
+| `GET /api/log?hours=336&points=800` | stored log, averaged down to `points` (10…3000) |
+| `GET /log-full.csv?days=14` | stored log as CSV, every record, local time |
+| `GET /api/settings`, `POST /api/...` | LFO / envelope settings, note, gate |
+
+### Flash layout (16 MB, `partitions_16MB.csv`)
+
+| Partition | Size | For |
+|---|---|---|
+| app0 / app1 | 2 x 4 MB | firmware (two slots, so OTA updates are possible later) |
+| spiffs (LittleFS) | 7.9 MB | the data log (6.4 MB) + room for screen images / fonts later |
+| nvs, otadata, coredump | small | WiFi + calibration settings, crash dump |
 
 ## Build and flash
 
@@ -41,6 +67,10 @@ pio run -t upload
 pio device monitor        # type: help
 ```
 
+**First boot with the 16 MB layout** formats the LittleFS partition (a few seconds, `status`
+shows the log). If anything behaves oddly after the switch, wipe the flash once with
+`pio run -t erase` and upload again; then WiFi and V/oct calibration must be entered again.
+
 First boot has no WiFi stored, so it opens the access point **SynthPatch** (password `synthpatch`):
 join it and browse to http://192.168.4.1. To use your own network:
 
@@ -48,6 +78,8 @@ join it and browse to http://192.168.4.1. To use your own network:
 wifi set <ssid> <password>          (reboots, then http://synthpatch.local)
 mqtt set 192.168.1.20               (optional: your laptop running Mosquitto)
 status                              (which DACs and which temperature sensor were found)
+log                                 (how many records are stored, oldest / newest time)
+log clear                           (delete the stored log)
 ```
 
 ## Try it without an oscillator

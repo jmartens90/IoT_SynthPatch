@@ -12,6 +12,7 @@
 #include <mutex>
 #include <string>
 
+#include "DataLog.h"
 #include "Engine.h"
 #include "History.h"
 #include "Inputs.h"
@@ -25,6 +26,7 @@
 struct Sample {
   uint32_t t;        // seconds since boot
   float tempC;       // averaged, NAN if no sensor reading
+  float rh;          // humidity %, NAN if the sensor has none
   float hz;          // input frequency, 0 = no signal
   float drift;       // smoothed cents off the current note
   float volts;       // ADC input
@@ -73,6 +75,8 @@ class App {
   SettingsMirror &settings() { return settings_; }
   History<Sample, 600> &history() { return history_; }        // 10 minutes at 1 Hz
   History<NoteEvent, 20> &noteEvents() { return events_; }
+  DataLog &log() { return log_; }                               // weeks, 1 per 10 s, in flash
+  static bool timeValid() { return time(nullptr) > 1700000000; }  // NTP has set the clock
   unsigned noteEventCount() const { return noteCount_; }  // total since boot
   std::string hardwareReport() const;
   const Ad5693Output &voct() const { return voct_; }
@@ -92,6 +96,7 @@ class App {
   synth::PitchTracker pitch_;
   History<Sample, 600> history_;
   History<NoteEvent, 20> events_;
+  DataLog log_;
 
   Mcp4725Output lfoDac_{cfg::ADDR_MCP4725_LFO, cfg::MCP4725_VDD};
   Mcp4725Output envDac_{cfg::ADDR_MCP4725_ENV, cfg::MCP4725_VDD};
@@ -108,7 +113,7 @@ class App {
   Live live_;
   float tempAvg_[10] = {};
   int tempCount_ = 0, tempIdx_ = 0;
-  uint32_t lastBlockMs_ = 0, lastTempMs_ = 0, lastSampleMs_ = 0;
+  uint32_t lastBlockMs_ = 0, lastTempMs_ = 0, lastLogMs_ = 0;
   bool btnWasDown_ = false;
   volatile unsigned noteCount_ = 0;
 };

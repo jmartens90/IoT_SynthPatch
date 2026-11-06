@@ -38,9 +38,12 @@ small{color:#889}
  <div class="kpi"><b id="outs">-</b><span>LFO / ENV / V/oct out</span></div>
 </div></section>
 
-<section class="card wide"><h2>History (last 10 min)
- <select id="series"><option value="drift">drift (cents)</option><option value="hz">frequency (Hz)</option><option value="volts">ADC (V)</option></select>
- <small>orange = temperature, blue = selected, lines = note changes</small> · <a href="/log.csv" style="color:#9fb3c8">download CSV</a></h2>
+<section class="card wide"><h2>History
+ <select id="range"><option value="0">live (10 min)</option><option value="1">1 hour</option><option value="24">24 hours</option>
+ <option value="168">7 days</option><option value="336">14 days</option><option value="1104">46 days</option></select>
+ <select id="series"><option value="drift">drift (cents)</option><option value="hz">frequency (Hz)</option><option value="volts">ADC (V)</option><option value="rh">humidity (%)</option></select>
+ <small>orange = temperature, blue = selected, lines = note changes (live)</small> ·
+ <a href="/log-full.csv?days=14" style="color:#9fb3c8">download 14 days (CSV)</a> <small id="loginfo"></small></h2>
  <canvas id="chart"></canvas></section>
 
 <section class="card" id="lfo1"><h2>LFO → MCP4725</h2></section>
@@ -99,10 +102,21 @@ function draw(){
   arr.forEach((y,i)=>{if(y===null||isNaN(y)){pen=false;return;}pen?g.lineTo(X(H.t[i]),Y(y)):g.moveTo(X(H.t[i]),Y(y));pen=true;});g.stroke();
   g.fillStyle=col;g.font=`${11*devicePixelRatio}px system-ui`;g.textAlign=side;const x=side=="left"?2:W-2;
   g.fillText(hi.toPrecision(4),x,14*devicePixelRatio);g.fillText(lo.toPrecision(4),x,Ht-4);};
- g.strokeStyle="#555";EV.forEach(e=>{if(e.t>=t0){g.beginPath();g.moveTo(X(e.t),0);g.lineTo(X(e.t),Ht);g.stroke();}});
- line(H.temp,"#f0a020","left");line(H[$("series").value],"#4ea1ff","right");
+ g.strokeStyle="#555";if(live())EV.forEach(e=>{if(e.t>=t0){g.beginPath();g.moveTo(X(e.t),0);g.lineTo(X(e.t),Ht);g.stroke();}});
+ line(H.temp,"#f0a020","left");if(H[$("series").value])line(H[$("series").value],"#4ea1ff","right");
+ // time axis: real dates for the flash log, seconds since boot for the live view
+ const fmt=t=>t>1e9?new Date(t*1000).toLocaleString([], {month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):t+" s";
+ g.fillStyle="#889";g.font=`${11*devicePixelRatio}px system-ui`;g.textAlign="left";g.fillText(fmt(t0),40*devicePixelRatio,Ht-4);
+ g.textAlign="right";g.fillText(fmt(t1),W-40*devicePixelRatio,Ht-4);
 }
 $("series").onchange=draw;addEventListener("resize",draw);
+const live=()=>$("range").value=="0";
+// Range picker: live = last 10 min from RAM (1 per s), the others = flash log (1 per 10 s, averaged to 800 points)
+async function loadRange(){
+ H=await (await fetch(live()?"/api/history":`/api/log?hours=${$("range").value}&points=800`)).json();
+ draw();
+}
+$("range").onchange=loadRange;
 
 // ---- live values once a second ----
 async function tick(){
@@ -117,7 +131,9 @@ async function tick(){
   $("outs").textContent=`${s.lfo_v.toFixed(2)} / ${s.env_v.toFixed(2)} / ${s.voct_v.toFixed(3)} V`;
   $("envout").textContent=s.env_out;
   $("net").textContent=`${s.wifi} · ${s.rssi} dBm · up ${s.uptime}s`+(s.mqtt?" · MQTT ok":"");
-  if(!H.t.length||s.uptime>H.t[H.t.length-1]){for(const k of ["temp","hz","drift","volts"])H[k].push(s[{temp:"temp_c",hz:"hz",drift:"drift",volts:"volts"}[k]]);H.t.push(s.uptime);
+  $("loginfo").textContent=s.time?`· ${s.log_count} samples stored`:"· log waits for NTP time (home WiFi)";
+  if(!live()){if(s.uptime%60==0)loadRange();}  // stored view: refresh once a minute
+  else if(!H.t.length||s.uptime>H.t[H.t.length-1]){for(const k of ["temp","hz","drift","volts","rh"])H[k].push(s[{temp:"temp_c",hz:"hz",drift:"drift",volts:"volts",rh:"rh"}[k]]);H.t.push(s.uptime);
    if(H.t.length>600)for(const k in H)H[k].shift();}
   if(s.events_total!==evTotal){evTotal=s.events_total;await loadEvents();}
   draw();
@@ -125,5 +141,5 @@ async function tick(){
 }
 async function loadEvents(){EV=(await (await fetch("/api/events")).json());
  $("ev").innerHTML=EV.slice().reverse().map(e=>`${e.t}s: ${nn(e.from)} → <b>${nn(e.to)}</b>`).join("<br>");}
-(async()=>{await buildControls();H=await (await fetch("/api/history")).json();await loadEvents();tick();setInterval(tick,1000);})();
+(async()=>{await buildControls();await loadRange();await loadEvents();tick();setInterval(tick,1000);})();
 </script></body></html>)HTML";

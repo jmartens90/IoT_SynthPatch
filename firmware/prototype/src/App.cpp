@@ -38,6 +38,9 @@ void App::begin() {
     voct_.setVolts(0.0f);
   }
 
+  // ---- flash log ----
+  if (!log_.begin()) Serial.println("LittleFS log could not be opened");
+
   // ---- inputs ----
   temp_ = TemperatureSensor::detect();
   freq_.begin();
@@ -151,7 +154,16 @@ void App::loop() {
     float v = adc_.read();
     std::lock_guard<std::mutex> lock(liveMutex_);
     live_.volts = v;
-    history_.push({now / 1000, live_.tempC, live_.hz, live_.drift, v});
+    history_.push({now / 1000, live_.tempC, live_.humidity, live_.hz, live_.drift, v});
+  }
+
+  // Every 10 s one record into the flash log, but only once NTP has given us the real time
+  // (without it the time stamps would be meaningless after a reboot).
+  if (now - lastLogMs_ >= 10000 && timeValid()) {
+    lastLogMs_ = now;
+    Live l = live();
+    log_.append({static_cast<uint32_t>(time(nullptr)), l.tempC, l.humidity, l.hz > 0 ? l.hz : NAN,
+                 l.drift, l.volts});
   }
 
   // BOOT button = gate (active low), with a simple edge detect.
@@ -180,5 +192,7 @@ std::string App::hardwareReport() const {
   s += std::string("  ENV  -> ") + (envOut_ == &envDac_ ? "MCP4725 0x61" : "PWM on GPIO 2 (no 2nd MCP4725)") + "\n";
   s += std::string("  V/oct-> AD5693R 0x4C: ") + (voct_.ok() ? "ok" : "NOT FOUND") + "\n";
   s += std::string("  temperature: ") + (temp_ ? temp_->name() : "-") + "\n";
+  s += "  flash log: " + std::string(log_.ok() ? "ok, " + std::to_string(log_.count()) + " records" : "NOT available") +
+       (timeValid() ? "" : " (waiting for NTP time: needs home WiFi)") + "\n";
   return s;
 }

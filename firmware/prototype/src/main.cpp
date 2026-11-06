@@ -25,7 +25,8 @@ static void help() {
       "  voct <volts> | voct code <0-65535> | voct gain 1|2\n"
       "  voct cal <code1> <volts1> <code2> <volts2> | voct cal show | voct cal reset\n"
       "  tone <hz>                      test tone on GPIO 17 (0 = off)\n"
-      "  gate on|off");
+      "  gate on|off\n"
+      "  log | log clear                flash log info / erase it");
 }
 
 static void status() {
@@ -102,6 +103,14 @@ static void command(const String &line) {
     Serial.printf("  %.4f V -> code %u\n", arg(1).toFloat(), app.voct().code());
   } else if (c == "tone") {
     app.setToneHz(arg(1).toFloat());
+  } else if (c == "log" && arg(1) == "clear") {
+    app.log().clear();
+    Serial.println("  log erased");
+  } else if (c == "log") {
+    time_t a = app.log().oldestTime(), b = app.log().newestTime();
+    Serial.printf("  %u records (max %u), %s", app.log().count(), DataLog::CAPACITY, a ? ctime(&a) : "empty\n");
+    if (b) Serial.printf("  newest: %s", ctime(&b));
+    Serial.printf("  clock: %s\n", App::timeValid() ? "set by NTP" : "not set (connect to home WiFi)");
   } else if (c == "gate") {
     app.gate(arg(1) == "on", "shell");
   } else {
