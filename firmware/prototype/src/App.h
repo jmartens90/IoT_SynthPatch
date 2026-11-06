@@ -17,6 +17,7 @@
 #include "History.h"
 #include "Inputs.h"
 #include "Outputs.h"
+#include "PatchBank.h"
 #include "PitchTracker.h"
 #include "SettingsMirror.h"
 #include "TemperatureSensor.h"
@@ -75,6 +76,7 @@ class App {
   SettingsMirror &settings() { return settings_; }
   History<Sample, 600> &history() { return history_; }        // 10 minutes at 1 Hz
   History<NoteEvent, 20> &noteEvents() { return events_; }
+  PatchBank &patches() { return patches_; }                     // named patches A1..D8 in flash
   DataLog &log() { return log_; }                               // weeks, 1 per 10 s, in flash
   static bool timeValid() { return time(nullptr) > 1700000000; }  // NTP has set the clock
   unsigned noteEventCount() const { return noteCount_; }  // total since boot
@@ -97,6 +99,7 @@ class App {
   History<Sample, 600> history_;
   History<NoteEvent, 20> events_;
   DataLog log_;
+  PatchBank patches_;
 
   Mcp4725Output lfoDac_{cfg::ADDR_MCP4725_LFO, cfg::MCP4725_VDD};
   Mcp4725Output envDac_{cfg::ADDR_MCP4725_ENV, cfg::MCP4725_VDD};

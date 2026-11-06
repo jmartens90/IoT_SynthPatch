@@ -29,6 +29,14 @@ class Param {
   float max() const { return max_; }
   float get() const { return value_; }
 
+  // Narrow (or widen) the allowed range, e.g. to the 0..3.3 V of a breadboard DAC. The value is
+  // clamped into the new range right away.
+  void setRange(float min, float max) {
+    min_ = min;
+    max_ = max;
+    value_ = std::clamp(value_, min_, max_);
+  }
+
   // SETTER: the only way to change the value. Returns true if the value changed.
   bool set(float v) {
     float clamped = std::clamp(v, min_, max_);

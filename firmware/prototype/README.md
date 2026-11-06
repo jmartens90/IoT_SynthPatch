@@ -22,6 +22,11 @@ Wiring: [WIRING.md](WIRING.md).
   note-vs-drift classifier (`PitchTracker`) on the device.
 * **Actuator:** LFO and envelope (engine at 1 kHz in its own FreeRTOS task) on the I2C DACs; V/oct
   from the web keyboard on the AD5693R.
+* **Synth panel:** knobs for the LFO (rate, depth, offset around the 1.65 V middle, with a scope
+  that shows in red where the 0…3.3 V DAC clips) and the envelope (A/D/S/R/peak, with its curve).
+  Drag up/down (Shift = fine), mouse wheel, double-click = default.
+* **Patch memory:** 4 banks x 8 named patches (A1…D8) saved as small JSON files in LittleFS
+  (`src/PatchBank.h`). Click a slot to load it, type a name and press SAVE to store.
 * **Dashboard + interaction:** web page at `http://synthpatch.local` with live values, a 10-minute
   chart (temperature + drift / Hz / volts, note changes as lines), LFO and envelope controls, gate
   button and a keyboard. CSV download of the log.
@@ -49,7 +54,10 @@ Logging needs the real time, which comes from NTP, so the ESP must be on your ho
 | `GET /api/history` | last 10 minutes from RAM, one point per second |
 | `GET /api/log?hours=336&points=800` | stored log, averaged down to `points` (10…3000) |
 | `GET /log-full.csv?days=14` | stored log as CSV, every record, local time |
-| `GET /api/settings`, `POST /api/...` | LFO / envelope settings, note, gate |
+| `GET /api/settings`, `POST /api/set`, `/api/shape` | LFO / envelope settings |
+| `GET /api/patches` | the 32 patch slots with their names (`null` = empty) |
+| `POST /api/patch/save?slot=0&name=Slow%20wobble`, `/api/patch/load?slot=0`, `/api/patch/delete?slot=0` | patch memory |
+| `POST /api/note`, `/api/gate` | keyboard and gate |
 
 ### Flash layout (16 MB, `partitions_16MB.csv`)
 

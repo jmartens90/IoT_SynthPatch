@@ -52,6 +52,8 @@ class Modulator {
   // `virtual` so a child can catch names that aren't plain numbers (Lfo uses it for "shape").
   virtual bool setParam(const std::string &name, float value);
   bool getParam(const std::string &name, float &value) const;
+  // Change a parameter's allowed range (the hardware decides it: 0..3.3 V here, -5..5 V on the PCB).
+  bool setRange(const std::string &name, float min, float max);
 
   const std::string &id() const { return id_; }
   float output() const { return output_; }  // last value returned by tick()

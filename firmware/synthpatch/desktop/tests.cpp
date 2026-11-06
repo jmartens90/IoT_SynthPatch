@@ -47,6 +47,12 @@ static void testParamClamp() {
   CHECK(!p.set(50.0f));  // no change -> false
   p.set(-3.0f);
   CHECK(p.get() == 0.01f);
+  // narrower range for a 0..3.3 V DAC: the value is pulled inside right away
+  Param off("offset", "V", -5.0f, 5.0f, 4.0f);
+  off.setRange(0.0f, 3.3f);
+  CHECK(off.get() == 3.3f && off.max() == 3.3f);
+  off.set(-1.0f);
+  CHECK(off.get() == 0.0f);
 }
 
 static void testLfo() {
@@ -60,6 +66,9 @@ static void testLfo() {
   CHECK(lfo.setParam("offset", 2.0f));
   float o = 0;
   CHECK(lfo.getParam("offset", o) && o == 2.0f);
+  CHECK(lfo.setRange("depth", 0.0f, 1.65f) && !lfo.setRange("nope", 0, 1));
+  lfo.setParam("depth", 5.0f);
+  CHECK(lfo.getParam("depth", o) && o == 1.65f);
 }
 
 static void testEnvelope() {

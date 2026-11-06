@@ -51,9 +51,17 @@ void App::begin() {
   // ---- engine: one LFO, one envelope, scaled to the 0..3.3 V of the breadboard DACs ----
   Modulator *lfo = engine_.add(ModulatorFactory::create("lfo", "lfo1"), lfoDac_);
   Modulator *env = engine_.add(ModulatorFactory::create("envelope", "env1"), *envOut_);
+  // The DACs can only make 0..3.3 V, so the ranges are narrowed to what the hardware can do.
+  // The LFO swings around the middle, 1.65 V (op-amps will scale that to +-5 V later):
+  //   depth  = amplitude, 0..1.65 V  (1.65 = the full 0..3.3 V swing)
+  //   offset = centre,    0..3.3 V   (1.65 = the middle; the page shows it as +-1.65 V)
+  // offset + depth can still go past 0 or 3.3 V: the DAC clips there and the page shows CLIP.
+  lfo->setRange("depth", 0.0f, cfg::MCP4725_VDD / 2);
+  lfo->setRange("offset", 0.0f, cfg::MCP4725_VDD);
+  env->setRange("peak", 0.0f, cfg::MCP4725_VDD);
   lfo->setParam("rate", 0.5f);
-  lfo->setParam("depth", 1.6f);
-  lfo->setParam("offset", 1.65f);
+  lfo->setParam("depth", cfg::MCP4725_VDD / 2);
+  lfo->setParam("offset", cfg::MCP4725_VDD / 2);
   env->setParam("peak", 3.3f);
   env->setParam("attack", 0.05f);
   env->setParam("release", 0.8f);

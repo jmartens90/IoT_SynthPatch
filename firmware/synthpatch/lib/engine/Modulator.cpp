@@ -19,4 +19,11 @@ bool Modulator::getParam(const std::string &name, float &value) const {
   return true;
 }
 
+bool Modulator::setRange(const std::string &name, float min, float max) {
+  auto it = byName_.find(name);
+  if (it == byName_.end()) return false;
+  it->second->setRange(min, max);
+  return true;
+}
+
 }  // namespace synth

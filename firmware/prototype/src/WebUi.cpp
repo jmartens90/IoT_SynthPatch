@@ -209,6 +209,25 @@ void WebUi::routes() {
     app_.post(Command::setShape(server.arg("target").c_str(), server.arg("shape").c_str(), "http"));
     server.send(200, "text/plain", "ok");
   });
+  // ---- patch memory: 32 named slots A1..D8 ----
+  server.on("/api/patches", HTTP_GET, [this] {
+    JsonDocument d;
+    app_.patches().list(d.to<JsonArray>());
+    sendJson(d);
+  });
+  server.on("/api/patch/save", HTTP_POST, [this] {
+    bool ok = app_.patches().save(server.arg("slot").toInt(), server.arg("name").c_str(), app_.settings());
+    server.send(ok ? 200 : 400, "text/plain", ok ? "saved" : "save failed");
+  });
+  server.on("/api/patch/load", HTTP_POST, [this] {
+    bool ok = app_.patches().load(server.arg("slot").toInt(), app_);
+    server.send(ok ? 200 : 404, "text/plain", ok ? "loaded" : "empty slot");
+  });
+  server.on("/api/patch/delete", HTTP_POST, [this] {
+    bool ok = app_.patches().remove(server.arg("slot").toInt());
+    server.send(ok ? 200 : 404, "text/plain", ok ? "deleted" : "empty slot");
+  });
+
   server.on("/api/gate", HTTP_POST, [this] {
     app_.gate(server.arg("on") == "1", "http");
     server.send(200, "text/plain", "ok");

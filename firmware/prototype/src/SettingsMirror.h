@@ -63,6 +63,16 @@ class SettingsMirror {
     }
   }
 
+  // Only the values, for a patch file: {"lfo1":{"shape":"sine","rate":0.5,..},"env1":{..}}
+  void values(JsonObject out) {
+    std::lock_guard<std::mutex> lock(m_);
+    for (const auto &mod : mods_) {
+      JsonObject o = out[mod.id].to<JsonObject>();
+      if (!mod.shape.empty()) o["shape"] = mod.shape;
+      for (const auto &p : mod.params) o[p.name] = p.value;
+    }
+  }
+
   // Goes up on every change, so MQTT can see "something changed, publish again".
   unsigned version() {
     std::lock_guard<std::mutex> lock(m_);
