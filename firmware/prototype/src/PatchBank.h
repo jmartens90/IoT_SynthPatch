@@ -3,7 +3,8 @@
 // 4 banks (A..D) x 8 patches = 32 slots, like the memory buttons on a hardware synth.
 // Each slot is a small JSON file in LittleFS (the same file system as the data log):
 //
-//   /patches/05.json   {"name":"Slow wobble","lfo1":{"shape":"sine","rate":0.5,...},"env1":{...}}
+//   /patches/05.json   {"name":"Slow wobble","lfo1":{"shape":"sine","rate":0.5,...},"env1":{...},
+//                       "seq":{"bpm":120,"mode":"retrig","steps":[...]}}
 //
 // Saving copies the current values from the SettingsMirror. Loading turns every stored value back
 // into a Command for the engine queue: the same path as a knob turn on the web page, so the page,
@@ -29,7 +30,7 @@ class PatchBank {
   // "A1".."D8" for slot 0..31
   static std::string label(int slot);
 
-  bool save(int slot, const std::string &name, SettingsMirror &settings);
+  bool save(int slot, const std::string &name, App &app);  // LFO + envelope + sequence
   bool load(int slot, App &app);  // false if the slot is empty or broken
   bool remove(int slot);
 

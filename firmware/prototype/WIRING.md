@@ -56,7 +56,17 @@ with the wiper on GPIO 8.
 
 ## Gate button
 
-The **BOOT** button on the dev kit (GPIO 0) gates the envelope.
+The **BOOT** button on the dev kit (GPIO 0) gates the envelope. While the sequencer runs, it
+restarts the sequence at step 1 instead.
+
+## Gate output and trigger input
+
+* **Gate out, GPIO 4:** 0 / 3.3 V, high while the envelope gate is open (keyboard, sequencer,
+  BOOT button). Put 1 kΩ in series to the jack. For gear that wants 5 V gates, use a transistor
+  or a 74HCT buffer on 5 V.
+* **Trigger in, GPIO 5:** a rising edge restarts the sequencer at step 1 and starts it. Internal
+  pull-down, so nothing plugged in = no trigger. **Max 3.3 V:** a Eurorack gate (5–10 V) needs a
+  divider (10 kΩ in series, 4.7 kΩ to GND) or an NPN transistor.
 
 ## Pin summary
 
@@ -69,4 +79,6 @@ The **BOOT** button on the dev kit (GPIO 0) gates the envelope.
 | 17 | test tone output |
 | 21 | DS18B20 |
 | 16 | DHT11 |
-| 0 | BOOT button = gate |
+| 0 | BOOT button = gate / sequencer restart |
+| 4 | gate output |
+| 5 | trigger input (max 3.3 V) |

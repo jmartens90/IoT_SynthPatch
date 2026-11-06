@@ -47,6 +47,18 @@ void App::begin() {
   tone_.begin();
   adc_.begin();
   pinMode(cfg::PIN_GATE_BTN, INPUT_PULLUP);
+  pinMode(cfg::PIN_GATE_OUT, OUTPUT);
+  digitalWrite(cfg::PIN_GATE_OUT, LOW);
+  pinMode(cfg::PIN_TRIG_IN, INPUT_PULLDOWN);  // nothing plugged in = low = no trigger
+
+  // ---- sequencer: its notes go to V/oct, its gates to the envelope + gate output ----
+  // These slots run in the engine task (the sequencer is ticked there).
+  seq_.noteOut.connect([this](int midi) {
+    voct_.setVolts(noteToVolts(midi));
+    std::lock_guard<std::mutex> lock(liveMutex_);
+    live_.voctNote = midi;
+  });
+  seq_.gateOut.connect([this](bool on) { gate(on, "seq"); });
 
   // ---- engine: one LFO, one envelope, scaled to the 0..3.3 V of the breadboard DACs ----
   Modulator *lfo = engine_.add(ModulatorFactory::create("lfo", "lfo1"), lfoDac_);
@@ -80,12 +92,23 @@ void App::engineTask(void *self) {
   App *app = static_cast<App *>(self);  // a FreeRTOS task gets a void*; we passed `this`
   TickType_t last = xTaskGetTickCount();
   for (;;) {
+    // Trigger input: checked every 1 ms here, so a trigger is never more than 1 ms late.
+    // (An interrupt would be faster, but trigger() locks a mutex, which an ISR may not do.)
+    bool high = digitalRead(cfg::PIN_TRIG_IN) == HIGH;
+    if (high && !app->trigWasHigh_) app->seq_.trigger();  // rising edge only
+    app->trigWasHigh_ = high;
+
+    app->seq_.tick(0.001f);  // may post gate commands: run it before the engine executes them
     app->engine_.tick(0.001f);
     vTaskDelayUntil(&last, pdMS_TO_TICKS(1));  // exactly every 1 ms (FreeRTOS tick = 1 kHz)
   }
 }
 
-void App::gate(bool on, const char *source) { engine_.post(Command::gate("env1", on, source)); }
+// One place for every gate: the envelope (via the command queue) and the gate output pin.
+void App::gate(bool on, const char *source) {
+  digitalWrite(cfg::PIN_GATE_OUT, on ? HIGH : LOW);
+  engine_.post(Command::gate("env1", on, source));
+}
 
 void App::playNote(int midi, bool on, const char *source) {
   if (on) {
@@ -174,11 +197,16 @@ void App::loop() {
                  l.drift, l.volts});
   }
 
-  // BOOT button = gate (active low), with a simple edge detect.
+  // BOOT button (active low), with a simple edge detect:
+  // sequencer running -> press restarts it at step 1; otherwise it is a manual gate.
   bool down = digitalRead(cfg::PIN_GATE_BTN) == LOW;
   if (down != btnWasDown_) {
     btnWasDown_ = down;
-    gate(down, "button");
+    if (seq_.running()) {
+      if (down) seq_.trigger();
+    } else {
+      gate(down, "button");
+    }
   }
 }
 
@@ -199,6 +227,8 @@ std::string App::hardwareReport() const {
   s += std::string("  LFO  -> MCP4725 0x60: ") + (lfoDac_.ok() ? "ok" : "NOT FOUND") + "\n";
   s += std::string("  ENV  -> ") + (envOut_ == &envDac_ ? "MCP4725 0x61" : "PWM on GPIO 2 (no 2nd MCP4725)") + "\n";
   s += std::string("  V/oct-> AD5693R 0x4C: ") + (voct_.ok() ? "ok" : "NOT FOUND") + "\n";
+  s += "  GATE -> GPIO " + std::to_string(cfg::PIN_GATE_OUT) + " (0/3.3 V), trigger in on GPIO " +
+       std::to_string(cfg::PIN_TRIG_IN) + "\n";
   s += std::string("  temperature: ") + (temp_ ? temp_->name() : "-") + "\n";
   s += "  flash log: " + std::string(log_.ok() ? "ok, " + std::to_string(log_.count()) + " records" : "NOT available") +
        (timeValid() ? "" : " (waiting for NTP time: needs home WiFi)") + "\n";

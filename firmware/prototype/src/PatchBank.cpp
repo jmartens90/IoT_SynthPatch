@@ -3,6 +3,7 @@
 #include <LittleFS.h>
 
 #include "App.h"
+#include "SeqJson.h"
 
 using synth::Command;
 
@@ -28,10 +29,11 @@ std::string PatchBank::cleanName(const std::string &name) {
   return out.empty() ? "Init" : out;
 }
 
-bool PatchBank::save(int slot, const std::string &name, SettingsMirror &settings) {
+bool PatchBank::save(int slot, const std::string &name, App &app) {
   if (!valid(slot)) return false;
   JsonDocument doc;
-  settings.values(doc.to<JsonObject>());  // {"lfo1":{...},"env1":{...}}
+  app.settings().values(doc.to<JsonObject>());  // {"lfo1":{...},"env1":{...}}
+  seqToJson(app.seq().pattern(), doc["seq"].to<JsonObject>());
   doc["name"] = cleanName(name);
 
   if (!LittleFS.exists(DIR)) LittleFS.mkdir(DIR);
@@ -53,8 +55,15 @@ bool PatchBank::load(int slot, App &app) {
   if (err) return false;
 
   // {"lfo1":{"shape":"sine","rate":0.5}} -> setShape(lfo1, sine), setParam(lfo1, rate, 0.5)
+  // The sequence (older patch files have none: then the current one stays).
+  if (doc["seq"].is<JsonObject>()) {
+    synth::Sequencer::Pattern p = app.seq().pattern();
+    seqFromJson(doc["seq"], p);
+    app.seq().setPattern(p);
+  }
+
   for (JsonPair mod : doc.as<JsonObject>()) {
-    if (!mod.value().is<JsonObject>()) continue;  // skips "name"
+    if (!mod.value().is<JsonObject>() || strcmp(mod.key().c_str(), "seq") == 0) continue;  // skips "name", "seq"
     const char *target = mod.key().c_str();
     for (JsonPair p : mod.value().as<JsonObject>()) {
       if (strcmp(p.key().c_str(), "shape") == 0)

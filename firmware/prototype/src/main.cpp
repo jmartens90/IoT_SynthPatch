@@ -26,6 +26,7 @@ static void help() {
       "  voct cal <code1> <volts1> <code2> <volts2> | voct cal show | voct cal reset\n"
       "  tone <hz>                      test tone on GPIO 17 (0 = off)\n"
       "  gate on|off\n"
+      "  seq start|stop|trig            sequencer (trig = restart at step 1)\n"
       "  log | log clear                flash log info / erase it");
 }
 
@@ -111,6 +112,13 @@ static void command(const String &line) {
     Serial.printf("  %u records (max %u), %s", app.log().count(), DataLog::CAPACITY, a ? ctime(&a) : "empty\n");
     if (b) Serial.printf("  newest: %s", ctime(&b));
     Serial.printf("  clock: %s\n", App::timeValid() ? "set by NTP" : "not set (connect to home WiFi)");
+  } else if (c == "seq") {
+    if (arg(1) == "start") app.seq().start();
+    else if (arg(1) == "stop") app.seq().stop();
+    else if (arg(1) == "trig") app.seq().trigger();
+    auto p = app.seq().pattern();
+    Serial.printf("  %s, %.0f bpm, %d steps, %s\n", app.seq().running() ? "running" : "stopped", p.bpm, p.length,
+                  synth::Sequencer::modeName(p.mode));
   } else if (c == "gate") {
     app.gate(arg(1) == "on", "shell");
   } else {

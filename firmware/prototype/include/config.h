@@ -42,7 +42,15 @@ constexpr int PIN_TEST_TONE = 17;
 constexpr int PIN_ADC_IN = 8;
 
 // Gate button for the envelope: the BOOT button of the dev kit (active low).
+// While the sequencer runs, it restarts the sequence instead.
 constexpr int PIN_GATE_BTN = 0;
+
+// Gate output: 0 / 3.3 V, high while the envelope gate is open (keyboard, sequencer, button).
+// Through 1k to a jack; for 5 V gear use a transistor or a 74HCT buffer.
+constexpr int PIN_GATE_OUT = 4;
+// Trigger input: a rising edge (0 -> 3.3 V) restarts the sequencer at step 1 and starts it.
+// Max 3.3 V! For Eurorack gates (5-10 V) use a divider (10k + 4.7k) or a transistor.
+constexpr int PIN_TRIG_IN = 5;
 
 // LEDC channels: 0/1 share timer 0, 2/3 share timer 1, so the PWM and the tone don't interfere.
 constexpr int LEDC_ENV = 0;

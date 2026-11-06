@@ -10,6 +10,7 @@
 #include "Engine.h"
 #include "ModulatorFactory.h"
 #include "PitchTracker.h"
+#include "Sequencer.h"
 
 using namespace synth;
 
@@ -167,6 +168,57 @@ static void testPitchTracker() {
   CHECK(pt.centsOff() > 50.0f);
 }
 
+// Run the sequencer for `ms` milliseconds at 1 kHz and record what it emits.
+struct SeqLog {
+  std::vector<std::string> ev;  // "n60@0", "on@0", "off@62" (time in ms)
+};
+static void runSeq(Sequencer &q, SeqLog &log, int ms, int &now) {
+  for (int i = 0; i < ms; i++, now++) q.tick(0.001f);
+}
+
+static void testSequencer() {
+  Sequencer q;
+  SeqLog log;
+  int now = 0;
+  q.noteOut.connect([&](int n) { log.ev.push_back("n" + std::to_string(n) + "@" + std::to_string(now)); });
+  q.gateOut.connect([&](bool on) { log.ev.push_back(std::string(on ? "on@" : "off@") + std::to_string(now)); });
+
+  Sequencer::Pattern p;
+  p.length = 3;
+  p.bpm = 150.0f;  // one step = 60/150/4 = 100 ms
+  p.gateLength = 0.5f;
+  p.steps[0] = {60, true};
+  p.steps[1] = {62, false};  // rest
+  p.steps[2] = {64, true};
+  q.setPattern(p);
+
+  // Retrig: a gate per step that is on, closed after 50 ms; the rest step plays nothing.
+  q.trigger();
+  runSeq(q, log, 301, now);
+  const std::vector<std::string> retrig = {"n60@0", "on@0", "off@50", "n64@200", "on@200", "off@250", "n60@300", "on@300"};
+  CHECK(log.ev == retrig);
+  CHECK(q.position() == 0 && q.running());
+
+  // Legato: one gate per loop, opened at step 1, closed at 95 % of the last step.
+  q.stop();
+  runSeq(q, log, 1, now);
+  CHECK(!q.running() && q.position() == -1 && log.ev.back() == "off@301");
+  p.mode = Sequencer::Mode::Legato;
+  q.setPattern(p);
+  log.ev.clear();
+  now = 0;
+  q.trigger();
+  runSeq(q, log, 301, now);
+  const std::vector<std::string> legato = {"n60@0", "on@0", "n64@200", "off@295", "n60@300", "on@300"};
+  CHECK(log.ev == legato);
+
+  // Values are clamped.
+  p.length = 99;
+  p.bpm = 1;
+  q.setPattern(p);
+  CHECK(q.pattern().length == 16 && q.pattern().bpm == 20.0f);
+}
+
 int main() {
   testWaveforms();
   testParamClamp();
@@ -175,6 +227,7 @@ int main() {
   testEngineCommands();
   testFactory();
   testPitchTracker();
+  testSequencer();
   if (failures) {
     std::printf("%d of %d checks FAILED\n", failures, checks);
     return 1;

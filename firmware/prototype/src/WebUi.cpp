@@ -8,6 +8,7 @@
 
 #include "App.h"
 #include "MqttLink.h"
+#include "SeqJson.h"
 #include "WebPage.h"
 
 using synth::Command;
@@ -216,7 +217,7 @@ void WebUi::routes() {
     sendJson(d);
   });
   server.on("/api/patch/save", HTTP_POST, [this] {
-    bool ok = app_.patches().save(server.arg("slot").toInt(), server.arg("name").c_str(), app_.settings());
+    bool ok = app_.patches().save(server.arg("slot").toInt(), server.arg("name").c_str(), app_);
     server.send(ok ? 200 : 400, "text/plain", ok ? "saved" : "save failed");
   });
   server.on("/api/patch/load", HTTP_POST, [this] {
@@ -226,6 +227,41 @@ void WebUi::routes() {
   server.on("/api/patch/delete", HTTP_POST, [this] {
     bool ok = app_.patches().remove(server.arg("slot").toInt());
     server.send(ok ? 200 : 404, "text/plain", ok ? "deleted" : "empty slot");
+  });
+
+  // ---- sequencer ----
+  server.on("/api/seq", HTTP_GET, [this] {
+    JsonDocument d;
+    seqToJson(app_.seq().pattern(), d.to<JsonObject>());
+    d["pos"] = app_.seq().position();
+    d["run"] = app_.seq().running();
+    sendJson(d);
+  });
+  // Body = JSON with only the fields that change, e.g. {"bpm":140} or {"steps":[...]}.
+  server.on("/api/seq", HTTP_POST, [this] {
+    JsonDocument in;
+    if (deserializeJson(in, server.arg("plain"))) {  // "plain" = the raw request body
+      server.send(400, "text/plain", "bad json");
+      return;
+    }
+    synth::Sequencer::Pattern p = app_.seq().pattern();
+    seqFromJson(in.as<JsonObjectConst>(), p);
+    app_.seq().setPattern(p);
+    server.send(200, "text/plain", "ok");
+  });
+  // Small and fast, polled by the page ~8x per second for the running light.
+  server.on("/api/seq/pos", HTTP_GET, [this] {
+    server.send(200, "application/json",
+                String("{\"pos\":") + String(app_.seq().position()) + ",\"run\":" + (app_.seq().running() ? "true}" : "false}"));
+  });
+  server.on("/api/seq/run", HTTP_POST, [this] {
+    if (server.arg("on") == "1") app_.seq().start();
+    else app_.seq().stop();
+    server.send(200, "text/plain", "ok");
+  });
+  server.on("/api/seq/trig", HTTP_POST, [this] {
+    app_.seq().trigger();
+    server.send(200, "text/plain", "ok");
   });
 
   server.on("/api/gate", HTTP_POST, [this] {

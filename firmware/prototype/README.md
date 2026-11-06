@@ -27,6 +27,10 @@ Wiring: [WIRING.md](WIRING.md).
   Drag up/down (Shift = fine), mouse wheel, double-click = default.
 * **Patch memory:** 4 banks x 8 named patches (A1…D8) saved as small JSON files in LittleFS
   (`src/PatchBank.h`). Click a slot to load it, type a name and press SAVE to store.
+* **Sequencer:** 16 steps (note + on/off), 20–300 BPM, 1–16 steps, run by the ESP in the 1 kHz
+  engine task (`../synthpatch/lib/engine/Sequencer.h`, tested on the PC). RETRIG = a new gate every
+  step (GATE knob = gate length), LEGATO = one gate per loop and only the pitch changes. TRIG, the
+  BOOT button or a rising edge on GPIO 5 restarts it at step 1. The sequence is saved in the patch.
 * **Dashboard + interaction:** web page at `http://synthpatch.local` with live values, a 10-minute
   chart (temperature + drift / Hz / volts, note changes as lines), LFO and envelope controls, gate
   button and a keyboard. CSV download of the log.
@@ -57,6 +61,8 @@ Logging needs the real time, which comes from NTP, so the ESP must be on your ho
 | `GET /api/settings`, `POST /api/set`, `/api/shape` | LFO / envelope settings |
 | `GET /api/patches` | the 32 patch slots with their names (`null` = empty) |
 | `POST /api/patch/save?slot=0&name=Slow%20wobble`, `/api/patch/load?slot=0`, `/api/patch/delete?slot=0` | patch memory |
+| `GET /api/seq`, `POST /api/seq` (JSON body, only the fields that change) | sequencer pattern |
+| `POST /api/seq/run?on=1`, `/api/seq/trig`, `GET /api/seq/pos` | transport, running light |
 | `POST /api/note`, `/api/gate` | keyboard and gate |
 
 ### Flash layout (16 MB, `partitions_16MB.csv`)

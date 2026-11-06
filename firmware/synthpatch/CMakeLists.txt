@@ -14,6 +14,7 @@ add_library(engine
   lib/engine/Envelope.cpp
   lib/engine/Engine.cpp
   lib/engine/PitchTracker.cpp
+  lib/engine/Sequencer.cpp
 )
 target_include_directories(engine PUBLIC lib/engine)
 if(MSVC)

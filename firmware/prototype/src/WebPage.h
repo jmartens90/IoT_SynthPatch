@@ -52,6 +52,13 @@ button.save{background:#b8321f;color:#fff;font-weight:700;letter-spacing:.1em}
 .slots button.cur{outline:2px solid var(--accent)}
 input[type=text]{font:inherit;background:#111;color:var(--text);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:170px}
 select{font:inherit;background:#111;color:var(--text);border:1px solid var(--line);border-radius:5px;padding:3px}
+.steps{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin-top:10px}
+.st{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;border-radius:6px;background:#1b1d21;border:1px solid #111;
+ user-select:none;touch-action:none}
+.st.sel{outline:2px solid var(--blue)} .st.out{opacity:.3}
+.st .nt{font:600 13px ui-monospace,Menlo,Consolas,monospace;cursor:ns-resize;padding:2px 0}
+.st .num{font-size:10px;color:var(--dim)}
+.st button{padding:2px 0;width:80%;font-size:11px}
 .keys{display:flex;user-select:none;touch-action:none;margin-top:8px}
 .k{flex:1;height:90px;background:#eee;border:1px solid #333;border-radius:0 0 4px 4px}
 .k.b{background:#222;height:56px;flex:.6;margin:0 -1.5%;z-index:1}
@@ -89,8 +96,18 @@ a{color:#9fb3c8}
  </section>
 </div>
 
-<section class="mod"><h2><b>KEYBOARD</b><span>V/oct → AD5693R · gate → envelope</span></h2>
- <label class="hint"><input type="checkbox" id="tonek" checked> also play the note on the test tone (GPIO 17 → 13)</label>
+<section class="mod"><h2><b>SEQUENCER</b><span>V/oct → AD5693R · gate → envelope + GPIO 4 · trigger in GPIO 5</span></h2>
+ <div class="row">
+  <button id="play">▶ PLAY</button><button id="stop">■ STOP</button><button id="trig" title="restart at step 1">TRIG</button>
+  <span style="width:16px"></span>
+  <button id="mRetrig" title="a new gate for every step">RETRIG</button><button id="mLegato" title="one gate per loop, only the pitch changes">LEGATO</button>
+  <span class="hint" id="mhint"></span>
+ </div>
+ <div class="knobs" id="seqKnobs" style="justify-content:flex-start;gap:18px"></div>
+ <div class="steps" id="steps"></div>
+ <p class="hint">Click a step to select it, then press a key to set its note (the next step is selected after that).
+ Drag a note up/down or use the wheel to change it by a semitone. ON/OFF = play or rest.</p>
+ <label class="hint"><input type="checkbox" id="tonek" checked> keys also play the note on the test tone (GPIO 17 → 13)</label>
  <div class="keys" id="keys"></div></section>
 
 <section class="mod"><h2><b>MONITOR</b><span id="outs"></span></h2>
@@ -148,7 +165,7 @@ function knob(box,mod,p,opt){
  }
  function change(x){
   pos=Math.min(1,Math.max(0,x));const v=fromPos(pos);S[mod][p.name]=v;draw();redraw();edited();
-  clearTimeout(timer);timer=setTimeout(()=>post(`/api/set?target=${mod}&name=${p.name}&value=${v.toFixed(4)}`),40);
+  clearTimeout(timer);timer=setTimeout(()=>opt.send?opt.send(v):post(`/api/set?target=${mod}&name=${p.name}&value=${v.toFixed(4)}`),40);
  }
  let y0,p0;
  el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);y0=e.clientY;p0=pos;};
@@ -237,7 +254,7 @@ async function select(s){
  if(P[s].name){                                  // a filled slot: load it into the engine
   if(dirty&&!confirm("Discard your unsaved changes?"))return;
   await post(`/api/patch/load?slot=${s}`);dirty=false;
-  setTimeout(async()=>{await loadSettings();syncKnobs();},150);              // engine applies it within ~1 ms
+  setTimeout(async()=>{await loadSettings();await loadSeq();syncKnobs();drawSteps();showMode();},150);              // engine applies it within ~1 ms
   msg(`loaded ${P[s].label}`);
  }else msg(`${P[s].label} is empty: type a name and press SAVE`);
  drawSlots();lcd();
@@ -253,12 +270,60 @@ $("del").onclick=async()=>{if(cur<0||!P[cur].name||!confirm(`Delete ${P[cur].lab
  await post(`/api/patch/delete?slot=${cur}`);await listPatches();msg("deleted");};
 const msg=t=>$("pmsg").textContent=t;
 
+// ================= SEQUENCER =================
+// The ESP runs it (1 ms timing in the engine task); the page only edits the pattern and shows the
+// running light. Pattern: {bpm, gate (0.05..0.95), mode "retrig"|"legato", length, steps:[{n,on} x16]}
+let selStep=-1;
+const postSeq=o=>fetch("/api/seq",{method:"POST",body:JSON.stringify(o)});
+async function loadSeq(){const q=await (await fetch("/api/seq")).json();S.seq=q;}
+function buildSeq(){
+ const sendNum=k=>v=>{S.seq[k]=k=="length"?Math.round(v):v;postSeq({[k]:S.seq[k]});if(k=="length")drawSteps();};
+ knob($("seqKnobs"),"seq",{name:"bpm",min:20,max:300},{label:"BPM",def:120,fmt:v=>Math.round(v)+"",send:sendNum("bpm")});
+ knob($("seqKnobs"),"seq",{name:"gate",min:.05,max:.95},{label:"GATE",def:.5,fmt:v=>Math.round(v*100)+" %",send:sendNum("gate")});
+ knob($("seqKnobs"),"seq",{name:"length",min:1,max:16},{label:"STEPS",def:8,fmt:v=>Math.round(v)+"",send:sendNum("length")});
+ $("play").onclick=()=>post("/api/seq/run?on=1");$("stop").onclick=()=>post("/api/seq/run?on=0");$("trig").onclick=()=>post("/api/seq/trig");
+ $("mRetrig").onclick=()=>setMode("retrig");$("mLegato").onclick=()=>setMode("legato");
+ drawSteps();showMode();
+}
+function setMode(m){S.seq.mode=m;postSeq({mode:m});showMode();edited();}
+function showMode(){$("mRetrig").classList.toggle("on",S.seq.mode=="retrig");$("mLegato").classList.toggle("on",S.seq.mode=="legato");
+ $("mhint").textContent=S.seq.mode=="legato"?"one gate per loop, GATE knob not used":"new gate every step";}
+const sendSteps=()=>{postSeq({steps:S.seq.steps});edited();};
+function drawSteps(){
+ const box=$("steps");box.innerHTML="";
+ S.seq.steps.forEach((st,i)=>{
+  const d=document.createElement("div");d.className="st"+(i>=Math.round(S.seq.length)?" out":"")+(i==selStep?" sel":"");
+  d.innerHTML=`<span class="led g" id="sl${i}"></span><span class="nt">${nn(st.n)}</span><button class="${st.on?"on":""}">${st.on?"ON":"OFF"}</button><span class="num">${i+1}</span>`;
+  d.onclick=e=>{if(e.target.tagName=="BUTTON")return;selStep=selStep==i?-1:i;drawSteps();};
+  d.querySelector("button").onclick=()=>{st.on=!st.on;sendSteps();drawSteps();};
+  const nt=d.querySelector(".nt");let y0,n0,moved;               // drag the note up/down = semitones
+  const setN=n=>{st.n=Math.max(24,Math.min(96,n));nt.textContent=nn(st.n);};
+  nt.onpointerdown=e=>{nt.setPointerCapture(e.pointerId);y0=e.clientY;n0=st.n;moved=false;};
+  nt.onpointermove=e=>{if(y0===undefined)return;const n=n0+Math.round((y0-e.clientY)/12);if(n!=st.n){moved=true;setN(n);}};
+  nt.onpointerup=()=>{y0=undefined;if(moved){sendSteps();}};
+  nt.onwheel=e=>{e.preventDefault();setN(st.n-Math.sign(e.deltaY));clearTimeout(nt.t);nt.t=setTimeout(sendSteps,150);};
+  box.appendChild(d);});
+}
+let seqPos=-1;
+async function pollSeq(){                                  // running light, ~7x per second
+ try{const r=await (await fetch("/api/seq/pos")).json();
+  if(r.pos!==seqPos){$("sl"+seqPos)?.classList.remove("on");seqPos=r.pos;$("sl"+seqPos)?.classList.add("on");}
+  $("play").classList.toggle("on",r.run);}catch(e){}
+ setTimeout(pollSeq,150);
+}
+
 // ================= GATE + KEYBOARD =================
 const hold=(el,on,off)=>{el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);el.classList.add("on");on();};
  el.onpointerup=el.onpointercancel=()=>{el.classList.remove("on");off();};};
 hold($("gate"),()=>post("/api/gate?on=1"),()=>post("/api/gate?on=0"));
+// A key with a step selected = step entry: write the note there and select the next step.
+// While the sequencer runs, keys only enter notes (they don't play, the sequencer owns V/oct).
 for(let n=48;n<=72;n++){const k=document.createElement("div");k.className="k"+([1,3,6,8,10].includes(n%12)?" b":"");k.title=nn(n);
- hold(k,()=>post(`/api/note?n=${n}&on=1&tone=${$("tonek").checked?1:0}`),()=>post(`/api/note?n=${n}&on=0`));$("keys").appendChild(k);}
+ hold(k,()=>{
+   if(selStep>=0){S.seq.steps[selStep].n=n;S.seq.steps[selStep].on=true;sendSteps();selStep=(selStep+1)%Math.round(S.seq.length);drawSteps();}
+   if(!$("play").classList.contains("on"))post(`/api/note?n=${n}&on=1&tone=${$("tonek").checked?1:0}`);},
+  ()=>{if(!$("play").classList.contains("on"))post(`/api/note?n=${n}&on=0`);});
+ $("keys").appendChild(k);}
 
 // ================= HISTORY CHART (IoT monitor) =================
 let H={t:[],temp:[],hz:[],drift:[],volts:[],rh:[]}, EV=[], evTotal=-1;
@@ -306,5 +371,5 @@ async function tick(){
 }
 async function loadEvents(){EV=await (await fetch("/api/events")).json();
  $("ev").innerHTML=EV.slice().reverse().map(e=>`${e.t}s: ${nn(e.from)} → <b>${nn(e.to)}</b>`).join("<br>");}
-(async()=>{await loadSettings();buildModules();redraw();await listPatches();await loadRange();await loadEvents();tick();setInterval(tick,1000);})();
+(async()=>{await loadSettings();await loadSeq();buildModules();buildSeq();pollSeq();redraw();await listPatches();await loadRange();await loadEvents();tick();setInterval(tick,1000);})();
 </script></body></html>)HTML";

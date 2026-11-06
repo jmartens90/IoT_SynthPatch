@@ -19,6 +19,7 @@
 #include "Outputs.h"
 #include "PatchBank.h"
 #include "PitchTracker.h"
+#include "Sequencer.h"
 #include "SettingsMirror.h"
 #include "TemperatureSensor.h"
 #include "config.h"
@@ -76,6 +77,7 @@ class App {
   SettingsMirror &settings() { return settings_; }
   History<Sample, 600> &history() { return history_; }        // 10 minutes at 1 Hz
   History<NoteEvent, 20> &noteEvents() { return events_; }
+  synth::Sequencer &seq() { return seq_; }                      // 16-step sequencer
   PatchBank &patches() { return patches_; }                     // named patches A1..D8 in flash
   DataLog &log() { return log_; }                               // weeks, 1 per 10 s, in flash
   static bool timeValid() { return time(nullptr) > 1700000000; }  // NTP has set the clock
@@ -94,6 +96,7 @@ class App {
   void readTemperature();
 
   synth::Engine engine_;
+  synth::Sequencer seq_;
   SettingsMirror settings_;
   synth::PitchTracker pitch_;
   History<Sample, 600> history_;
@@ -118,5 +121,6 @@ class App {
   int tempCount_ = 0, tempIdx_ = 0;
   uint32_t lastBlockMs_ = 0, lastTempMs_ = 0, lastLogMs_ = 0;
   bool btnWasDown_ = false;
+  bool trigWasHigh_ = false;  // trigger input, read in the engine task
   volatile unsigned noteCount_ = 0;
 };
