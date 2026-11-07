@@ -27,9 +27,9 @@ Wiring: [WIRING.md](WIRING.md).
   Drag up/down (Shift = fine), mouse wheel, double-click = default.
 * **Patch memory:** 4 banks x 8 named patches (A1…D8) saved as small JSON files in LittleFS
   (`src/PatchBank.h`). Click a slot to load it, type a name and press SAVE to store.
-* **Sequencer:** 16 steps (note + on/off), 20–300 BPM, 1–16 steps, run by the ESP in the 1 kHz
+* **Sequencer:** piano roll (click to draw note blocks, drag to change pitch, click to delete), 16 steps, 20–300 BPM, 1–16 steps, run by the ESP in the 1 kHz
   engine task (`../synthpatch/lib/engine/Sequencer.h`, tested on the PC). RETRIG = a new gate every
-  step (GATE knob = gate length), LEGATO = one gate per loop and only the pitch changes. TRIG, the
+  step (GATE knob = gate length, shown as the block width), LEGATO = one gate per loop and only the pitch changes. TRIG, the
   BOOT button or a rising edge on GPIO 5 restarts it at step 1. A key on the web keyboard (with no
   step selected) restarts it transposed: the steps are written relative to C3, so pressing E3 plays
   everything 4 semitones up. The sequence is saved in the patch; shell `seq` prints the steps.

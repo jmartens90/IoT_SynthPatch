@@ -30,8 +30,8 @@ main{padding:12px;display:grid;gap:12px}
 .mod h2{margin:0 0 10px;font-size:12px;letter-spacing:.2em;color:var(--dim);display:flex;justify-content:space-between;align-items:center}
 .mod h2 b{color:var(--text)}
 .wide{grid-column:1/-1}
-#scope,#adsr{height:130px} #chart{height:240px} #cvs{height:220px}
-#notes{font:12px ui-monospace,Menlo,Consolas,monospace;max-height:220px;overflow:auto;color:#bbb;min-width:300px}
+#scope,#adsr{height:130px} #chart{height:240px} #cvs{height:300px}
+#notes{font:12px ui-monospace,Menlo,Consolas,monospace;max-height:300px;overflow:auto;color:#bbb;min-width:300px}
 #notes b{color:var(--accent)}
 canvas{display:block;width:100%;background:#0d0e10;border-radius:6px;border:1px solid #000}
 .knobs{display:flex;flex-wrap:wrap;justify-content:space-around;gap:6px;margin-top:10px}
@@ -54,13 +54,18 @@ button.save{background:#b8321f;color:#fff;font-weight:700;letter-spacing:.1em}
 .slots button.cur{outline:2px solid var(--accent)}
 input[type=text]{font:inherit;background:#111;color:var(--text);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:170px}
 select{font:inherit;background:#111;color:var(--text);border:1px solid var(--line);border-radius:5px;padding:3px}
-.steps{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin-top:10px}
-.st{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;border-radius:6px;background:#1b1d21;border:1px solid #111;
- user-select:none;touch-action:none}
-.st.sel{outline:2px solid var(--blue)} .st.out{opacity:.3}
-.st .nt{font:600 13px ui-monospace,Menlo,Consolas,monospace;cursor:ns-resize;padding:2px 0}
-.st .num{font-size:10px;color:var(--dim)}
-.st button{padding:2px 0;width:80%;font-size:11px}
+.roll{display:grid;grid-template-columns:40px repeat(16,1fr);margin-top:10px;user-select:none;touch-action:none;
+ border:1px solid #000;border-radius:6px;overflow:hidden;background:#15171a}
+.roll div{height:14px;border-right:1px solid #1f2226;border-bottom:1px solid #1b1d21;position:relative}
+.roll .kl{font:10px ui-monospace,Menlo,Consolas,monospace;color:#888;padding-left:4px;line-height:14px;border-right:1px solid #000;background:#e8e8e8;color:#333}
+.roll .kl.bk{background:#2a2a2a;color:#aaa}
+.roll .c.bk{background:#191b1e} .roll .c.bar{border-right-color:#33373d}
+.roll .c.out{background:repeating-linear-gradient(45deg,#121315 0 4px,#16181b 4px 8px)}
+.roll .c.ph{background:#2a2f24}
+.roll .hd{height:20px;font-size:10px;color:var(--dim);text-align:center;line-height:20px;cursor:pointer;background:#1f2226}
+.roll .hd.sel{background:var(--blue);color:#000} .roll .hd.ph{background:#59ff7a;color:#000}
+.roll .blk{position:absolute;left:1px;top:1px;bottom:1px;border-radius:3px;background:var(--accent);border:1px solid #ffd08a;box-sizing:border-box;cursor:ns-resize}
+.roll .blk.leg{left:0;right:0!important;border-radius:0}
 .keys{display:flex;user-select:none;touch-action:none;margin-top:8px}
 .k{flex:1;height:90px;background:#eee;border:1px solid #333;border-radius:0 0 4px 4px}
 .k.b{background:#222;height:56px;flex:.6;margin:0 -1.5%;z-index:1}
@@ -106,11 +111,11 @@ a{color:#9fb3c8}
   <span class="hint" id="mhint"></span><span style="flex:1"></span><b id="trans" style="color:var(--accent)"></b>
  </div>
  <div class="knobs" id="seqKnobs" style="justify-content:flex-start;gap:18px"></div>
- <div class="steps" id="steps"></div>
- <p class="hint"><b>Write:</b> click a step, then press keys: each key fills the selected step and moves on.
- Drag a note up/down or use the wheel for a semitone. ON/OFF = play or rest.
- <b>Play:</b> with no step selected (click it again to deselect), a key restarts the sequence from step 1,
- transposed so the bottom C = the key you pressed.</p>
+ <div class="roll" id="roll"></div>
+ <p class="hint"><b>Draw:</b> click in the grid to place a note block (one note per step). Click a block to delete it,
+ drag it up/down to change the pitch. Block width = GATE length (LEGATO: blocks join up).
+ <b>Keys:</b> click a step number on top to select it, then keys write notes there one step after the other.
+ With no step selected, a key restarts the sequence transposed so C3 = the key you pressed.</p>
  <label class="hint"><input type="checkbox" id="tonek" checked> keys also play the note on the test tone (GPIO 17 → 13)</label>
  <div class="keys" id="keys"></div></section>
 
@@ -287,7 +292,7 @@ let selStep=-1;
 const postSeq=o=>fetch("/api/seq",{method:"POST",body:JSON.stringify(o)});
 async function loadSeq(){const q=await (await fetch("/api/seq")).json();S.seq=q;}
 function buildSeq(){
- const sendNum=k=>v=>{S.seq[k]=k=="length"?Math.round(v):v;postSeq({[k]:S.seq[k]});if(k=="length")drawSteps();};
+ const sendNum=k=>v=>{S.seq[k]=k=="length"?Math.round(v):v;postSeq({[k]:S.seq[k]});if(k=="length"||k=="gate")drawSteps();};
  knob($("seqKnobs"),"seq",{name:"bpm",min:20,max:300},{label:"BPM",def:120,fmt:v=>Math.round(v)+"",send:sendNum("bpm")});
  knob($("seqKnobs"),"seq",{name:"gate",min:.05,max:.95},{label:"GATE",def:.5,fmt:v=>Math.round(v*100)+" %",send:sendNum("gate")});
  knob($("seqKnobs"),"seq",{name:"length",min:1,max:16},{label:"STEPS",def:8,fmt:v=>Math.round(v)+"",send:sendNum("length")});
@@ -295,29 +300,58 @@ function buildSeq(){
  $("mRetrig").onclick=()=>setMode("retrig");$("mLegato").onclick=()=>setMode("legato");
  drawSteps();showMode();
 }
-function setMode(m){S.seq.mode=m;postSeq({mode:m});showMode();edited();}
+function setMode(m){S.seq.mode=m;postSeq({mode:m});showMode();drawSteps();edited();}
 function showMode(){$("mRetrig").classList.toggle("on",S.seq.mode=="retrig");$("mLegato").classList.toggle("on",S.seq.mode=="legato");
  $("mhint").textContent=S.seq.mode=="legato"?"one gate per loop, GATE knob not used":"new gate every step";}
 const sendSteps=()=>{postSeq({steps:S.seq.steps});edited();};
+// ---- piano roll: columns = steps, rows = notes (top = highest), one block per step ----
+// drawSteps() builds the grid; paintBlocks() only moves the blocks (fast, used while dragging).
+let ROLL_COLS=[], CELL={}, ROLL_LO=48, ROLL_HI=72;
 function drawSteps(){
- const box=$("steps");box.innerHTML="";
- S.seq.steps.forEach((st,i)=>{
-  const d=document.createElement("div");d.className="st"+(i>=Math.round(S.seq.length)?" out":"")+(i==selStep?" sel":"");
-  d.innerHTML=`<span class="led g" id="sl${i}"></span><span class="nt">${nn(st.n)}</span><button class="${st.on?"on":""}">${st.on?"ON":"OFF"}</button><span class="num">${i+1}</span>`;
-  d.onclick=e=>{if(e.target.tagName=="BUTTON")return;selStep=selStep==i?-1:i;drawSteps();};
-  d.querySelector("button").onclick=()=>{st.on=!st.on;sendSteps();drawSteps();};
-  const nt=d.querySelector(".nt");let y0,n0,moved;               // drag the note up/down = semitones
-  const setN=n=>{st.n=Math.max(24,Math.min(96,n));nt.textContent=nn(st.n);};
-  nt.onpointerdown=e=>{nt.setPointerCapture(e.pointerId);y0=e.clientY;n0=st.n;moved=false;};
-  nt.onpointermove=e=>{if(y0===undefined)return;const n=n0+Math.round((y0-e.clientY)/12);if(n!=st.n){moved=true;setN(n);}};
-  nt.onpointerup=()=>{y0=undefined;if(moved){sendSteps();}};
-  nt.onwheel=e=>{e.preventDefault();setN(st.n-Math.sign(e.deltaY));clearTimeout(nt.t);nt.t=setTimeout(sendSteps,150);};
-  box.appendChild(d);});
+ const box=$("roll"),st=S.seq.steps,len=Math.round(S.seq.length);
+ const used=st.slice(0,len).filter(x=>x.on).map(x=>x.n);
+ ROLL_LO=Math.min(48,...used);ROLL_HI=Math.max(72,...used);   // C3..C5, wider if the pattern needs it
+ box.innerHTML="";ROLL_COLS=[...Array(16)].map(()=>[]);CELL={};
+ const cell=(cls,txt="")=>{const d=document.createElement("div");d.className=cls;d.textContent=txt;box.appendChild(d);return d;};
+ cell("hd","");
+ for(let i=0;i<16;i++){const h=cell("hd"+(i==selStep?" sel":""),i+1);ROLL_COLS[i].push(h);
+  h.onclick=()=>{selStep=selStep==i?-1:i;drawSteps();};}
+ for(let n=ROLL_HI;n>=ROLL_LO;n--){
+  const black=[1,3,6,8,10].includes(n%12);
+  cell("kl"+(black?" bk":""),n%12==0||n==ROLL_HI||n==ROLL_LO?nn(n):"");
+  for(let i=0;i<16;i++){
+   const c=cell("c"+(black?" bk":"")+(i%4==3?" bar":"")+(i>=len?" out":""));ROLL_COLS[i].push(c);CELL[i+":"+n]=c;
+   c.onpointerdown=e=>{
+    c.setPointerCapture(e.pointerId);                    // all moves of this drag come to this cell
+    const had=st[i].on&&st[i].n==n,y0=e.clientY,rowH=c.offsetHeight;let moved=false;
+    if(!had){st[i].n=n;st[i].on=true;preview(n);paintBlocks();}
+    c.onpointermove=ev=>{const nn2=Math.max(ROLL_LO,Math.min(ROLL_HI,n+Math.round((y0-ev.clientY)/rowH)));
+     if(nn2!==st[i].n){st[i].n=nn2;moved=true;paintBlocks();}};
+    c.onpointerup=()=>{c.onpointermove=c.onpointerup=null;
+     if(had&&!moved)st[i].on=false;                       // a click on a block deletes it
+     else if(moved)preview(st[i].n);
+     sendSteps();paintBlocks();};
+   };
+  }
+ }
+ paintBlocks();
+ if(seqPos>=0)ROLL_COLS[seqPos].forEach(c=>c.classList.add("ph"));
 }
+function paintBlocks(){
+ document.querySelectorAll("#roll .blk").forEach(b=>b.remove());
+ const leg=S.seq.mode=="legato";
+ S.seq.steps.forEach((x,i)=>{const c=CELL[i+":"+x.n];if(!x.on||!c)return;
+  const b=document.createElement("div");b.className="blk"+(leg?" leg":"");
+  if(!leg)b.style.right=`${(1-S.seq.gate)*100}%`;c.appendChild(b);});
+}
+// hear the note you just drew (only when the sequencer is stopped, it owns V/oct while it runs)
+function preview(n){if($("play").classList.contains("on"))return;
+ post(`/api/note?n=${n}&on=1&tone=${$("tonek").checked?1:0}`);setTimeout(()=>post(`/api/note?n=${n}&on=0`),200);}
 // Running light. The ESP pushes over the WebSocket where it is (step, ms into the step, step time)
 // whenever it starts, stops, restarts or changes tempo, and every 5 s against clock drift.
 // The browser counts the steps in between with its own clock. No polling.
-let seqPos=-1, R={run:false,pos:-1,len:8,step_ms:125,in_ms:0,tr:0}, rAt=0;
+// (`var`, not `let`: drawSteps() above already reads seqPos when the page is built.)
+var seqPos=-1; let R={run:false,pos:-1,len:8,step_ms:125,in_ms:0,tr:0}, rAt=0;
 function onSeq(m){
  R=m;rAt=performance.now();
  $("play").classList.toggle("on",R.run);
@@ -327,7 +361,7 @@ const seqCmd=u=>post(u);   // the ESP answers by pushing a "seq" message
 function animSeq(){
  let p=-1;
  if(R.run&&R.pos>=0)p=(R.pos+Math.floor((R.in_ms+performance.now()-rAt)/R.step_ms))%R.len;
- if(p!==seqPos){$("sl"+seqPos)?.classList.remove("on");seqPos=p;$("sl"+seqPos)?.classList.add("on");}
+ if(p!==seqPos){(ROLL_COLS[seqPos]||[]).forEach(c=>c.classList.remove("ph"));seqPos=p;(ROLL_COLS[seqPos]||[]).forEach(c=>c.classList.add("ph"));}
  requestAnimationFrame(animSeq);
 }
 
@@ -380,18 +414,31 @@ function onCv(m){for(const k of ["lfo","env","voct"]){CV[k].push(...m[k]);if(CV[
 function onNotes(m){NOTES=NOTES.concat(m.list).slice(-32);
  $("notes").innerHTML=NOTES.slice().reverse().map(e=>`${(e.ms/1000).toFixed(2).padStart(8)} s  <b>${nn(e.note).padEnd(3)}</b> ${e.v.toFixed(3)} V  code ${String(e.code).padStart(5)}  ${e.src}`).join("<br>")||"no notes yet";}
 function drawCv(){
- const{g,W,H,r}=canvas("cvs"),lane=H/3,X=i=>i/(CVN-1)*W;
+ const{g,W,H,r}=canvas("cvs"),X=i=>i/(CVN-1)*W;
+ const LH=[H*.25,H*.25,H*.5],LT=[0,H*.25,H*.5];         // V/oct gets half the height (it's a piano roll)
  g.fillStyle="#0d0e10";g.fillRect(0,0,W,H);g.font=`${10*r}px system-ui`;
  const lanes=[["lfo","#f0a020","LFO 0..3.3 V"],["env","#59ff7a","ENV 0..3.3 V"],["voct","#4ea1ff","V/oct"]];
  lanes.forEach(([k,col,label],li)=>{
-  const top=li*lane,a=CV[k],off=CVN-a.length;if(li){g.strokeStyle="#222";g.beginPath();g.moveTo(0,top);g.lineTo(W,top);g.stroke();}
+  const top=LT[li],lane=LH[li],a=CV[k],off=CVN-a.length;if(li){g.strokeStyle="#222";g.beginPath();g.moveTo(0,top);g.lineTo(W,top);g.stroke();}
   let lo=0,hi=3.3;
-  if(k=="voct"&&a.length){lo=Math.min(...a)-.1;hi=Math.max(...a)+.1;}            // zoom in on the notes played
+  if(k=="voct"){                                       // piano roll: one block per held note
+   const ns=a.map(v=>Math.round(v*12)+36);if(ns.length){
+   const nlo=Math.min(...ns)-1,nhi=Math.max(...ns)+1,rh=(lane-16*r)/(nhi-nlo+1),YN=n=>top+14*r+(nhi-n)*rh;
+   g.font=`${Math.min(11,rh/r)*r}px system-ui`;
+   // A block = same note AND the envelope open (the note sounds). While the envelope is closed
+   // V/oct just holds its last value: drawn as a faint line.
+   const on=i=>(CV.env[i]??0)>.02;
+   for(let i=0;i<ns.length;){let j=i;while(j<ns.length&&ns[j]==ns[i]&&on(j)==on(i))j++;
+    const x0=X(i+off),x1=X(j+off),y=YN(ns[i]),h=Math.max(3*r,rh-2*r);
+    if(on(i)){g.fillStyle=col;g.fillRect(x0+1,y,Math.max(2,x1-x0-2),h);
+     g.strokeStyle="#bfe0ff";g.strokeRect(x0+1,y,Math.max(2,x1-x0-2),h);
+     if(x1-x0>22*r&&h>8*r){g.fillStyle="#001";g.fillText(nn(ns[i]),x0+3*r,y+h-2*r);}}
+    else{g.fillStyle="#4ea1ff33";g.fillRect(x0,y+h/2-r,x1-x0,2*r);}
+    i=j;}}
+   g.fillStyle="#667";g.font=`${10*r}px system-ui`;g.fillText(label,4*r,top+12*r);return;}
   const Y=v=>top+lane-4*r-(v-lo)/(hi-lo)*(lane-8*r);
   g.strokeStyle=col;g.lineWidth=1.5*r;g.beginPath();a.forEach((v,i)=>i?g.lineTo(X(i+off),Y(v)):g.moveTo(X(i+off),Y(v)));g.stroke();
   g.fillStyle="#667";g.fillText(label,4*r,top+12*r);
-  if(k=="voct"){g.fillStyle=col;let last=null;                                    // note name at every change
-   a.forEach((v,i)=>{const n=Math.round(v*12)+36;if(n!==last&&i>0){g.fillText(nn(n),X(i+off)+2*r,Y(v)-3*r);}last=n;});}
  });
 }
 
