@@ -75,6 +75,7 @@ class Sequencer {
     float stepS;      // seconds per step
     float inStepS;    // seconds since this step began
     int transpose;
+    unsigned epoch;   // goes up on every start, stop, restart and timing change
   };
   Status status();
   bool running();
@@ -111,6 +112,7 @@ class Sequencer {
   int pos_ = 0;              // current step
   float t_ = 0.0f;           // seconds since the current step began
   int transpose_ = 0;        // semitones added to every step note
+  unsigned epoch_ = 0;       // see Status::epoch: lets the web page know "resync now"
 };
 
 }  // namespace synth

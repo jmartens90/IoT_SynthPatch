@@ -36,7 +36,10 @@ Wiring: [WIRING.md](WIRING.md).
 * **Dashboard + interaction:** web page at `http://synthpatch.local` with live values, a 10-minute
   chart (temperature + drift / Hz / volts, note changes as lines), LFO and envelope controls, gate
   button and a keyboard. CSV download of the log.
-* **IoT communication:** HTTP REST API on the device (the chosen protocol, see the table below).
+* **IoT communication:** HTTP REST API on the device (the chosen protocol, see the table below),
+  plus a **WebSocket** on port 81 for push: the ESP sends the live values every second and the
+  sequencer position when it starts/stops/restarts, so the page never polls. Commands still go
+  over REST. (`src/WebUi.h` explains why both.)
   Optional, off by default: MQTT telemetry / events / retained settings /
   commands with a last-will "offline" status (see `src/MqttLink.h` for the topics).
 * **Recovery:** WiFi auto-reconnect, MQTT retry every 5 s, access-point fallback "SynthPatch" when

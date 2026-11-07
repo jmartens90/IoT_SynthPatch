@@ -4,6 +4,7 @@
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <WebServer.h>
+#include <WebSocketsServer.h>
 #include <WiFi.h>
 
 #include "App.h"
@@ -14,6 +15,7 @@
 using synth::Command;
 
 static WebServer server(80);
+static WebSocketsServer ws(81);  // the page connects to ws://<device>:81/
 extern MqttLink mqtt;  // defined in main.cpp, only asked "are you connected?"
 
 void WebUi::saveWifi(const char *ssid, const char *pass) {
@@ -66,9 +68,96 @@ void WebUi::begin(Print &log) {
   MDNS.addService("http", "tcp", 80);
   routes();
   server.begin();
+
+  // A new browser connects: send it everything right away, so it doesn't wait for the next push.
+  // (Commands still go over REST, so incoming WebSocket messages are ignored.)
+  ws.onEvent([this](uint8_t client, WStype_t type, uint8_t *, size_t) {
+    if (type != WStype_CONNECTED) return;
+    JsonDocument d;
+    String out;
+    liveJson(d);
+    serializeJson(d, out);
+    ws.sendTXT(client, out);
+    d.clear();
+    out = "";
+    seqJson(d);
+    serializeJson(d, out);
+    ws.sendTXT(client, out);
+  });
+  ws.begin();
 }
 
-void WebUi::loop() { server.handleClient(); }
+void WebUi::loop() {
+  server.handleClient();
+  ws.loop();
+  push();
+}
+
+// Everything the WebSocket sends goes out here, from the loop() task. The WebSocket library is
+// not thread-safe, so the engine task never sends itself: it only bumps the sequencer's epoch
+// counter, and we notice the change here (a few ms later at most).
+void WebUi::push() {
+  if (ws.connectedClients() == 0) return;  // nobody listening: skip the JSON work
+  uint32_t now = millis();
+  JsonDocument d;
+  String out;
+  synth::Sequencer::Status s = app_.seq().status();
+  if (s.epoch != seqEpoch_ || now - lastSeqPush_ >= 5000) {
+    seqEpoch_ = s.epoch;
+    lastSeqPush_ = now;
+    seqJson(d);
+    serializeJson(d, out);
+    ws.broadcastTXT(out);
+  }
+  if (now - lastLivePush_ >= 1000) {
+    lastLivePush_ = now;
+    d.clear();
+    out = "";
+    liveJson(d);
+    serializeJson(d, out);
+    ws.broadcastTXT(out);
+  }
+}
+
+void WebUi::liveJson(JsonDocument &d) {
+  Live l = app_.live();
+  d["type"] = "live";
+  d["temp_c"] = l.tempC;  // NAN becomes null in the JSON
+  d["temp_sensor"] = l.tempSensor;
+  d["rh"] = l.humidity;
+  d["hz"] = l.hz;
+  d["note"] = l.note;
+  d["cents_off"] = l.centsOff;
+  d["drift"] = l.drift;
+  d["drift_per_min"] = l.driftPerMin;
+  d["pitch_state"] = l.pitchState;
+  d["volts"] = l.volts;
+  d["lfo_v"] = l.lfoV;
+  d["env_v"] = l.envV;
+  d["env_out"] = l.envOut;
+  d["voct_v"] = l.voctV;
+  d["voct_note"] = l.voctNote;
+  d["tone_hz"] = l.toneHz;
+  d["events_total"] = app_.noteEventCount();
+  d["uptime"] = millis() / 1000;
+  d["time"] = App::timeValid() ? static_cast<uint32_t>(time(nullptr)) : 0;
+  d["log_count"] = app_.log().count();
+  d["wifi"] = apMode_ ? "AP SynthPatch" : WiFi.SSID();
+  d["rssi"] = apMode_ ? 0 : WiFi.RSSI();
+  d["mqtt"] = mqtt.connected();
+}
+
+// Where the sequencer is: the page counts the next steps itself with its own clock.
+void WebUi::seqJson(JsonDocument &d) {
+  synth::Sequencer::Status s = app_.seq().status();
+  d["type"] = "seq";
+  d["run"] = s.running;
+  d["pos"] = s.pos;
+  d["len"] = s.length;
+  d["step_ms"] = s.stepS * 1000;
+  d["in_ms"] = s.inStepS * 1000;
+  d["tr"] = s.transpose;
+}
 
 static void sendJson(const JsonDocument &doc) {
   String out;
@@ -81,31 +170,8 @@ void WebUi::routes() {
   server.on("/", HTTP_GET, [] { server.send_P(200, "text/html", INDEX_HTML); });
 
   server.on("/api/live", HTTP_GET, [this] {
-    Live l = app_.live();
     JsonDocument d;
-    d["temp_c"] = l.tempC;  // NAN becomes null in the JSON
-    d["temp_sensor"] = l.tempSensor;
-    d["rh"] = l.humidity;
-    d["hz"] = l.hz;
-    d["note"] = l.note;
-    d["cents_off"] = l.centsOff;
-    d["drift"] = l.drift;
-    d["drift_per_min"] = l.driftPerMin;
-    d["pitch_state"] = l.pitchState;
-    d["volts"] = l.volts;
-    d["lfo_v"] = l.lfoV;
-    d["env_v"] = l.envV;
-    d["env_out"] = l.envOut;
-    d["voct_v"] = l.voctV;
-    d["voct_note"] = l.voctNote;
-    d["tone_hz"] = l.toneHz;
-    d["events_total"] = app_.noteEventCount();
-    d["uptime"] = millis() / 1000;
-    d["time"] = App::timeValid() ? static_cast<uint32_t>(time(nullptr)) : 0;
-    d["log_count"] = app_.log().count();
-    d["wifi"] = apMode_ ? "AP SynthPatch" : WiFi.SSID();
-    d["rssi"] = apMode_ ? 0 : WiFi.RSSI();
-    d["mqtt"] = mqtt.connected();
+    liveJson(d);
     sendJson(d);
   });
 
@@ -249,14 +315,10 @@ void WebUi::routes() {
     app_.seq().setPattern(p);
     server.send(200, "text/plain", "ok");
   });
-  // Small, polled by the page twice a second. The page animates the running light itself from
-  // pos + how far into the step we are + the step time, so it doesn't skip steps between polls.
   server.on("/api/seq/pos", HTTP_GET, [this] {
-    synth::Sequencer::Status s = app_.seq().status();
-    char out[128];
-    snprintf(out, sizeof(out), "{\"run\":%s,\"pos\":%d,\"len\":%d,\"step_ms\":%.1f,\"in_ms\":%.1f,\"tr\":%d}",
-             s.running ? "true" : "false", s.pos, s.length, s.stepS * 1000, s.inStepS * 1000, s.transpose);
-    server.send(200, "application/json", out);
+    JsonDocument d;
+    seqJson(d);
+    sendJson(d);
   });
   server.on("/api/seq/run", HTTP_POST, [this] {
     if (server.arg("on") == "1") app_.seq().start();

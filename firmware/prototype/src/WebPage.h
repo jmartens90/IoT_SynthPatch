@@ -306,17 +306,16 @@ function drawSteps(){
   nt.onwheel=e=>{e.preventDefault();setN(st.n-Math.sign(e.deltaY));clearTimeout(nt.t);nt.t=setTimeout(sendSteps,150);};
   box.appendChild(d);});
 }
-// Running light. Asking the ESP 8x a second still skipped steps (a step at 120 BPM is 125 ms,
-// about as long as a poll), so: ask twice a second where it is (step, ms into the step, step time)
-// and let the browser count the steps in between with its own clock.
+// Running light. The ESP pushes over the WebSocket where it is (step, ms into the step, step time)
+// whenever it starts, stops, restarts or changes tempo, and every 5 s against clock drift.
+// The browser counts the steps in between with its own clock. No polling.
 let seqPos=-1, R={run:false,pos:-1,len:8,step_ms:125,in_ms:0,tr:0}, rAt=0;
-async function pollSeq(again=true){
- try{R=await (await fetch("/api/seq/pos")).json();rAt=performance.now();
-  $("play").classList.toggle("on",R.run);
-  $("trans").textContent=R.tr?`transpose ${R.tr>0?"+":""}${R.tr} (C3 → ${nn(48+R.tr)})`:"transpose 0";}catch(e){}
- if(again)setTimeout(pollSeq,500);
+function onSeq(m){
+ R=m;rAt=performance.now();
+ $("play").classList.toggle("on",R.run);
+ $("trans").textContent=R.tr?`transpose ${R.tr>0?"+":""}${R.tr} (C3 → ${nn(48+R.tr)})`:"transpose 0";
 }
-const seqCmd=async u=>{await post(u);pollSeq(false);};   // after play/stop/trig: re-sync the light at once
+const seqCmd=u=>post(u);   // the ESP answers by pushing a "seq" message
 function animSeq(){
  let p=-1;
  if(R.run&&R.pos>=0)p=(R.pos+Math.floor((R.in_ms+performance.now()-rAt)/R.step_ms))%R.len;
@@ -365,10 +364,18 @@ const live=()=>$("range").value=="0";
 async function loadRange(){H=await (await fetch(live()?"/api/history":`/api/log?hours=${$("range").value}&points=800`)).json();draw();}
 $("range").onchange=loadRange;
 
-// ================= LIVE VALUES, once a second =================
-async function tick(){
+// ================= WEBSOCKET: the ESP pushes, the page listens =================
+// One connection that stays open (port 81). Messages: {"type":"live",...} every second and
+// {"type":"seq",...} when the sequencer changes. If WiFi drops, try again every 2 s.
+function connectWs(){
+ const sock=new WebSocket(`ws://${location.hostname}:81/`);
+ sock.onmessage=e=>{const m=JSON.parse(e.data);if(m.type=="live")onLive(m);else if(m.type=="seq")onSeq(m);};
+ sock.onclose=()=>{$("net").textContent="offline, reconnecting…";setTimeout(connectWs,2000);};
+}
+
+// ================= LIVE VALUES (pushed once a second) =================
+async function onLive(s){
  try{
-  const s=await (await fetch("/api/live")).json();
   lfoV=s.lfo_v;envV=s.env_v;$("envled").classList.toggle("on",s.env_v>.05);redraw();
   $("temp").textContent=s.temp_c==null?"-":s.temp_c.toFixed(2)+" °C"+(s.rh==null?"":` · ${s.rh.toFixed(0)}%`);
   $("tsrc").textContent=s.temp_sensor?"("+s.temp_sensor+")":"";
@@ -385,9 +392,9 @@ async function tick(){
    if(H.t.length>600)for(const k in H)H[k].shift();}
   if(s.events_total!==evTotal){evTotal=s.events_total;await loadEvents();}
   draw();
- }catch(e){$("net").textContent="offline";}
+ }catch(e){console.log(e);}
 }
 async function loadEvents(){EV=await (await fetch("/api/events")).json();
  $("ev").innerHTML=EV.slice().reverse().map(e=>`${e.t}s: ${nn(e.from)} → <b>${nn(e.to)}</b>`).join("<br>");}
-(async()=>{await loadSettings();await loadSeq();buildModules();buildSeq();pollSeq();animSeq();redraw();await listPatches();await loadRange();await loadEvents();tick();setInterval(tick,1000);})();
+(async()=>{await loadSettings();await loadSeq();buildModules();buildSeq();animSeq();redraw();await listPatches();await loadRange();await loadEvents();connectWs();})();
 </script></body></html>)HTML";

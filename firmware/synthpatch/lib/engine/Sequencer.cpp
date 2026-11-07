@@ -12,6 +12,7 @@ void Sequencer::tick(float dt) {
     if (stop_) {
       stop_ = false;
       running_ = false;
+      epoch_++;
       if (gate_) ev.add({Event::GateOff, 0});
     }
     if (restart_) {
@@ -19,6 +20,7 @@ void Sequencer::tick(float dt) {
       running_ = true;
       pos_ = 0;
       t_ = 0.0f;
+      epoch_++;
       if (gate_) ev.add({Event::GateOff, 0});  // close first, so the new gate is a real new edge
       enterStep(ev);
     } else if (running_) {
@@ -96,7 +98,7 @@ int Sequencer::transpose() {
 Sequencer::Status Sequencer::status() {
   std::lock_guard<std::mutex> lock(m_);
   bool run = (running_ && !stop_) || restart_;
-  return {run, running_ ? pos_ : -1, pat_.length, stepSeconds(), t_, transpose_};
+  return {run, running_ ? pos_ : -1, pat_.length, stepSeconds(), t_, transpose_, epoch_};
 }
 
 bool Sequencer::running() {
@@ -122,6 +124,7 @@ void Sequencer::setPattern(const Pattern &p) {
   pat_.gateLength = std::clamp(p.gateLength, 0.05f, 0.95f);
   for (auto &s : pat_.steps) s.note = std::clamp(s.note, 0, 127);
   pos_ %= pat_.length;  // a shorter pattern: stay inside it
+  epoch_++;             // tempo or length may have changed: the page must resync
 }
 
 }  // namespace synth

@@ -1,7 +1,16 @@
-// WebUi.h - WiFi + the HTTP server: the GUI page and a small JSON REST API.
+// WebUi.h - WiFi + the HTTP server (the GUI page and a JSON REST API) + a WebSocket server.
+//
+// Two ways to talk to the device:
+//   * REST (port 80): the browser ASKS, the ESP answers. Used for everything the page does
+//     (settings, patches, notes) and for anyone who wants the data (curl, Excel, a script).
+//   * WebSocket (port 81): one connection that stays open, so the ESP can SEND without being
+//     asked. It pushes the live values every second and the sequencer position whenever it
+//     starts, stops, restarts or changes tempo (+ every 5 s against clock drift). No polling.
+//       {"type":"live", ...same fields as /api/live...}
+//       {"type":"seq","run":true,"pos":0,"len":8,"step_ms":125,"in_ms":0,"tr":4}
 //
 //   GET  /                      the GUI (WebPage.h)
-//   GET  /api/live              live values (polled every second by the page)
+//   GET  /api/live              live values (the page gets them over the WebSocket)
 //   GET  /api/history           last 10 minutes, one sample per second
 //   GET  /api/events            last note events
 //   GET  /api/settings          all LFO/envelope parameters with min/max/unit
@@ -18,6 +27,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 class App;
 
@@ -33,6 +43,11 @@ class WebUi {
 
  private:
   void routes();
+  void liveJson(JsonDocument &d);  // the live values, for /api/live and the WebSocket
+  void seqJson(JsonDocument &d);   // the sequencer position, for /api/seq/pos and the WebSocket
+  void push();                     // called from loop(): send over the WebSocket when needed
+  uint32_t lastLivePush_ = 0, lastSeqPush_ = 0;
+  unsigned seqEpoch_ = ~0u;        // the sequencer epoch we last pushed (~0 = none yet)
   App &app_;  // a reference member: must be set in the constructor, can never be null
   bool apMode_ = false;
 };
