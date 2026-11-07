@@ -8,7 +8,8 @@ Low Energy. No WiFi is needed: the phone connects straight to the module.
 | Synth     | LFO (scope with clip display, 4 shapes, RATE/DEPTH/OFFSET) and envelope (ADSR + peak, GATE button) |
 | Seq       | PLAY/STOP, TRIG, RETRIG/LEGATO, BPM/GATE/STEPS, piano roll with running light, keyboard (transpose or step entry) |
 | Patches   | Banks A..D x 8 slots: load, save with a name, delete                            |
-| Monitor   | Live values, history chart (10 min live up to 46 days from the flash log), CV scope of the 3 DACs, V/oct note log |
+| Outputs   | CV scope of the 3 DACs (last 10 s, V/oct as note blocks) and the V/oct note log |
+| Monitor   | Live values and the history chart (10 min live up to 46 days from the flash log) |
 
 ## How it fits together
 
@@ -34,7 +35,7 @@ SynthPatchApp --demo
 
 `--demo` replaces Bluetooth by a pretend ESP inside the app (`src/DemoEsp.*`): the sequencer
 plays, the scope moves, saving patches works. Handy to learn the code and the pages.
-`--page 1` opens a page directly (0 Synth, 1 Seq, 2 Patches, 3 Monitor).
+`--page 1` opens a page directly (0 Synth, 1 Seq, 2 Patches, 3 Outputs, 4 Monitor).
 In Qt Creator: Projects > Run > Command line arguments.
 
 ## Build for Android
@@ -80,7 +81,7 @@ together and see each other's changes (a knob turned on the phone moves on the w
 | `qml/Knob.qml`     | the synth knob (drag up/down, wheel, double-tap = default)         |
 | `qml/Keyboard.qml` | two octaves C3..C5                                                 |
 | `qml/Panel.qml`    | the titled box around each module                                  |
-| `qml/*Page.qml`    | the four pages                                                     |
+| `qml/*Page.qml`    | the five pages                                                     |
 
 ## Troubleshooting
 

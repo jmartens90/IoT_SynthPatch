@@ -1,4 +1,4 @@
-// Main.qml - the window: a status bar on top, four pages you swipe between.
+// Main.qml - the window: a status bar on top, five pages you swipe between.
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -27,9 +27,11 @@ ApplicationWindow {
     footer: TabBar {
         id: tabs
         currentIndex: pages.currentIndex
+        font.pixelSize: 11              // five tabs must fit on a phone
         TabButton { text: "Synth" }
         TabButton { text: "Seq" }
         TabButton { text: "Patches" }
+        TabButton { text: "Outputs" }
         TabButton { text: "Monitor" }
     }
 
@@ -46,6 +48,7 @@ ApplicationWindow {
         SynthPage {}
         SeqPage {}
         PatchPage {}
+        OutputsPage {}
         MonitorPage {}
     }
 

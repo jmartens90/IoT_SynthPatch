@@ -1,12 +1,14 @@
 // WebPage.h - the single-page GUI served at http://synthpatch.local/ (or http://192.168.4.1/).
 // Plain HTML + JavaScript, no internet needed (no CDN libraries): knobs are SVG, charts a canvas.
 //
-// Layout, top to bottom:
-//   header   display with the current patch (A1..D8 + name, * = edited), network status
-//   patches  bank A..D, slots 1..8, name field, SAVE
-//   modules  LFO (scope + shape + RATE/DEPTH/OFFSET), ENVELOPE (graph + A/D/S/R/PEAK + gate),
-//            keyboard -> V/oct
-//   monitor  live values, history chart (live .. 46 days), note events  (the IoT course part)
+// Layout: a header (display with the current patch, network status) and five tabs, the same
+// as the Android app:
+//   SYNTH     LFO (scope + shape + RATE/DEPTH/OFFSET), ENVELOPE (graph + A/D/S/R/PEAK + gate)
+//   SEQ       transport, RETRIG/LEGATO, BPM/GATE/STEPS, piano roll, keyboard
+//   PATCHES   bank A..D, slots 1..8, name field, SAVE
+//   OUTPUTS   the 3 DAC outputs (last 10 s) + V/oct note log
+//   MONITOR   live values, history chart (live .. 46 days), note events  (the IoT course part)
+// All tabs live in the page at once (hidden with CSS), so WebSocket updates keep flowing to all.
 #pragma once
 #include <pgmspace.h>
 
@@ -23,7 +25,12 @@ header{display:flex;gap:16px;align-items:center;justify-content:space-between;pa
  border:1px solid #1d3a25;box-shadow:inset 0 0 12px #000;min-width:260px;text-shadow:0 0 6px #3f9f55}
 .lcd small{color:#4f9c62;font-size:12px;margin-left:8px}
 #net{color:var(--dim);font-size:12px}
-main{padding:12px;display:grid;gap:12px}
+main{padding:12px}
+nav{display:flex;background:#0f1012;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{flex:1;background:none;border:0;border-bottom:3px solid transparent;border-radius:0;box-shadow:none;
+ padding:10px 12px;color:var(--dim);letter-spacing:.15em;font-size:12px;font-weight:600}
+nav button.cur{color:var(--accent);border-bottom-color:var(--accent)}
+.tab{display:none;gap:12px} .tab.cur{display:grid}
 .rack{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
 .mod{background:linear-gradient(#2a2e34,#23262b);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
  box-shadow:0 2px 8px #0008}
@@ -78,8 +85,10 @@ a{color:#9fb3c8}
 </style></head><body>
 <header><span class="logo">SYNTHPATCH</span>
  <div class="lcd" id="lcd">-- INIT</div><span id="net"></span></header>
+<nav id="tabs"><button data-t="synth">SYNTH</button><button data-t="seq">SEQ</button><button data-t="patches">PATCHES</button>
+ <button data-t="outputs">OUTPUTS</button><button data-t="monitor">MONITOR</button></nav>
 <main>
-
+<div class="tab" id="t-patches">
 <section class="mod"><h2>PATCH MEMORY <span class="hint">click a slot to load it</span></h2>
  <div class="row" id="banks"></div>
  <div class="row slots" id="slots" style="margin-top:8px"></div>
@@ -88,7 +97,9 @@ a{color:#9fb3c8}
   <button class="save" id="save">SAVE</button><button id="del" title="delete the selected slot">delete</button>
   <span class="hint" id="pmsg"></span></div>
 </section>
+</div>
 
+<div class="tab" id="t-synth">
 <div class="rack">
  <section class="mod" id="lfo1"><h2><b>LFO</b><span><span class="led" id="clip"></span>CLIP · MCP4725 0..3.3 V</span></h2>
   <canvas id="scope" height="130"></canvas>
@@ -102,7 +113,9 @@ a{color:#9fb3c8}
   <div class="row" style="margin-top:8px"><button id="gate">GATE (hold)</button><span><span class="led g" id="envled"></span>output</span></div>
  </section>
 </div>
+</div>
 
+<div class="tab" id="t-seq">
 <section class="mod"><h2><b>SEQUENCER</b><span>V/oct → AD5693R · gate → envelope + GPIO 4 · trigger in GPIO 5</span></h2>
  <div class="row">
   <button id="play">▶ PLAY</button><button id="stop">■ STOP</button><button id="trig" title="restart at step 1">TRIG</button>
@@ -118,13 +131,17 @@ a{color:#9fb3c8}
  With no step selected, a key restarts the sequence transposed so C3 = the key you pressed.</p>
  <label class="hint"><input type="checkbox" id="tonek" checked> keys also play the note on the test tone (GPIO 17 → 13)</label>
  <div class="keys" id="keys"></div></section>
+</div>
 
+<div class="tab" id="t-outputs">
 <section class="mod"><h2><b>OUTPUTS</b><span>what the DACs send out, last 10 s · <span style="color:#f0a020">LFO</span> ·
  <span style="color:#59ff7a">ENV</span> · <span style="color:#4ea1ff">V/oct</span></span></h2>
  <div class="row" style="align-items:stretch;flex-wrap:nowrap">
   <canvas id="cvs" style="flex:1"></canvas>
   <div id="notes"></div></div></section>
+</div>
 
+<div class="tab" id="t-monitor">
 <section class="mod"><h2><b>MONITOR</b><span id="outs"></span></h2>
  <div class="kpis">
   <div class="kpi"><b id="temp">-</b><span>temperature <i id="tsrc"></i></span></div>
@@ -141,6 +158,7 @@ a{color:#9fb3c8}
   <a href="/log-full.csv?days=14">download 14 days (CSV)</a> <small id="loginfo"></small></div>
  <canvas id="chart" height="240"></canvas>
  <h2 style="margin-top:12px">NOTE EVENTS</h2><div id="ev"></div></section>
+</div>
 </main>
 <script>
 const $=id=>document.getElementById(id), NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
@@ -402,6 +420,15 @@ function draw(){
  g.textAlign="right";g.fillText(fmt(t1),W-40*r,Ht-4*r);
 }
 $("series").onchange=draw;addEventListener("resize",()=>{draw();redraw();drawCv();});
+// ---- tabs: show one, hide the rest. The canvases take their size from the screen, and a hidden
+// canvas has width 0, so after switching we fire "resize" and everything redraws at its real size.
+// The tab is kept in the address (#seq) so a reload or a bookmark opens the same tab.
+function showTab(t){
+ if(!$("t-"+t))t="synth";
+ document.querySelectorAll(".tab").forEach(d=>d.classList.toggle("cur",d.id=="t-"+t));
+ document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("cur",b.dataset.t==t));
+ history.replaceState(null,"","#"+t);dispatchEvent(new Event("resize"));}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));  // first tab: at the end of the script
 const live=()=>$("range").value=="0";
 async function loadRange(){H=await (await fetch(live()?"/api/history":`/api/log?hours=${$("range").value}&points=800`)).json();draw();}
 $("range").onchange=loadRange;
@@ -480,4 +507,5 @@ async function onLive(s){
 async function loadEvents(){EV=await (await fetch("/api/events")).json();
  $("ev").innerHTML=EV.slice().reverse().map(e=>`${e.t}s: ${nn(e.from)} → <b>${nn(e.to)}</b>`).join("<br>");}
 (async()=>{await loadSettings();await loadSeq();buildModules();buildSeq();animSeq();redraw();await listPatches();await loadRange();await loadEvents();connectWs();})();
+showTab(location.hash.slice(1));  // last: every draw function exists by now
 </script></body></html>)HTML";

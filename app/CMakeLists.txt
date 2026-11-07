@@ -34,6 +34,7 @@ qt_add_qml_module(SynthPatchApp
         qml/SynthPage.qml
         qml/SeqPage.qml
         qml/PatchPage.qml
+        qml/OutputsPage.qml
         qml/MonitorPage.qml
 )
 
