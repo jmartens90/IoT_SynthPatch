@@ -5,7 +5,8 @@
 //   drag up/down          -> move the note
 //   tap a block           -> delete it (the step becomes a rest)
 //   tap a step number     -> select it; the keyboard below then writes notes into that step
-// Everything fits one screen (no scrolling), the roll rows share the height that is left.
+// Everything fits one screen (no scrolling). The roll shows 8 steps x 1 octave at a time:
+// 1-8 / 9-16 and the octave buttons move that window.
 // With no step selected, a key RESTARTS the sequence transposed: the bottom C (C3) = your key.
 //
 // The running light: the ESP only says "step 3, 40 ms into it, 125 ms per step" when something
@@ -23,12 +24,23 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
     readonly property bool running: device.seqState.run === true
     property int selStep: -1          // step chosen for keyboard entry, -1 = keys transpose
     property int playPos: -1          // step lit by the running light
+    property int stepPage: 0          // piano roll shows steps 1-8 (0) or 9-16 (1)
+    property int octLo: 48            // piano roll shows octLo..octLo+12 (C3..C4 at first)
+    property bool octSet: false       // octave picked once from the pattern's notes
 
     // Our own copy of the steps: the roll edits it while you drag, then sends it in one go.
     // JSON round trip = a deep copy (the property from C++ is read-only).
     property var steps: []
     property bool dragging: false
-    function copySteps() { if (!dragging) steps = JSON.parse(JSON.stringify(pat.steps || [])) }
+    function copySteps() {
+        if (dragging) return
+        steps = JSON.parse(JSON.stringify(pat.steps || []))
+        if (!octSet && steps.length) {   // first load: show the octave where most notes are
+            const ns = steps.slice(0, pat.length || 8).filter(s => s.on).map(s => s.n).sort((a, b) => a - b)
+            if (ns.length) octLo = 12 * Math.floor(ns[Math.floor(ns.length / 2)] / 12)
+            octSet = true
+        }
+    }
     Connections { target: device; function onPatternChanged() { page.copySteps(); roll.requestPaint() } }
     Component.onCompleted: copySteps()
 
@@ -103,21 +115,46 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
             title: "PIANO ROLL"; Layout.fillHeight: true
             subtitle: page.selStep >= 0 ? "step " + (page.selStep + 1) + " selected: keys write notes" : "keys play transposed"
 
+            // A phone is too small for 16 steps x 2 octaves, so the roll is a WINDOW onto the
+            // pattern: 8 steps (1-8 or 9-16) and one octave (C..C, 13 rows) at a time.
+            RowLayout {
+                Layout.fillWidth: true; spacing: 4
+                Button {
+                    text: "1–8"; checkable: true; checked: page.stepPage === 0; Layout.fillWidth: true
+                    visible: (page.pat.length || 8) > 8
+                    font.bold: page.playPos >= 0 && page.playPos < 8     // bold = the running light is here
+                    onClicked: page.stepPage = 0
+                }
+                Button {
+                    text: "9–16"; checkable: true; checked: page.stepPage === 1; Layout.fillWidth: true
+                    visible: (page.pat.length || 8) > 8
+                    font.bold: page.playPos >= 8
+                    onClicked: page.stepPage = 1
+                }
+                Item { Layout.fillWidth: true; visible: (page.pat.length || 8) <= 8 }
+                Button { text: "▼"; onClicked: page.octLo = Math.max(0, page.octLo - 12); Layout.preferredWidth: 48 }
+                Label {
+                    text: device.noteName(page.octLo) + "–" + device.noteName(page.octLo + 12)
+                    horizontalAlignment: Text.AlignHCenter; Layout.preferredWidth: 64; color: "#e6e6e6"
+                }
+                Button { text: "▲"; onClicked: page.octLo = Math.min(108, page.octLo + 12); Layout.preferredWidth: 48 }
+            }
+
             Canvas {
                 id: roll
                 Layout.fillWidth: true
-                // C3..C5, wider when the pattern uses notes outside that
-                readonly property var used: page.steps.slice(0, page.pat.length || 8).filter(s => s.on).map(s => s.n)
-                readonly property int lo: Math.min(48, ...used)
-                readonly property int hi: Math.max(72, ...used)
-                readonly property real labelW: 30
-                readonly property real headH: 20
-                readonly property real colW: (width - labelW) / 16
-                // the rows share whatever height the screen leaves for the roll
-                readonly property real rowH: (height - headH) / (hi - lo + 1)
                 Layout.fillHeight: true
+                readonly property int lo: page.octLo
+                readonly property int hi: page.octLo + 12
+                readonly property int first: (page.pat.length || 8) > 8 ? page.stepPage * 8 : 0   // first step shown
+                readonly property real labelW: 34
+                readonly property real headH: 26
+                readonly property real colW: (width - labelW) / 8
+                readonly property real rowH: (height - headH) / 13
                 onWidthChanged: requestPaint()
                 onHeightChanged: requestPaint()
+                onFirstChanged: requestPaint()
+                onLoChanged: requestPaint()
                 Connections { target: page; function onSelStepChanged() { roll.requestPaint() } }
 
                 function rowOf(n) { return hi - n }   // top row = highest note
@@ -127,29 +164,36 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                     const g = getContext("2d"), len = page.pat.length || 8, leg = page.pat.mode === "legato"
                     g.reset()
                     g.fillStyle = "#0d0e10"; g.fillRect(0, 0, width, height)
-                    g.font = "10px sans-serif"; g.textBaseline = "middle"
-                    // note rows
+                    g.font = "11px sans-serif"; g.textBaseline = "middle"
+                    // note rows, with a piano key strip on the left
                     for (let n = hi; n >= lo; n--) {
                         const y = headH + rowOf(n) * rowH
                         g.fillStyle = black(n) ? "#15171a" : "#1c1f23"; g.fillRect(labelW, y, width - labelW, rowH - 1)
-                        if (n % 12 === 0 || n === hi || n === lo) { g.fillStyle = "#8a929c"; g.fillText(device.noteName(n), 2, y + rowH / 2) }
+                        g.fillStyle = black(n) ? "#2a2a2a" : "#d8d8d8"; g.fillRect(0, y, labelW - 2, rowH - 1)
+                        g.fillStyle = black(n) ? "#aaa" : "#333"; g.fillText(device.noteName(n), 3, y + rowH / 2)
                     }
-                    for (let i = 0; i < 16; i++) {
-                        const x = labelW + i * colW
+                    for (let c = 0; c < 8; c++) {
+                        const i = first + c, x = labelW + c * colW
                         // step header (tap to select)
                         g.fillStyle = i === page.selStep ? "#f0a020" : i === page.playPos ? "#59ff7a" : "#24272c"
-                        g.fillRect(x + 1, 0, colW - 2, headH - 2)
+                        g.fillRect(x + 1, 0, colW - 2, headH - 3)
                         g.fillStyle = i === page.selStep || i === page.playPos ? "#000" : "#8a929c"
                         g.textAlign = "center"; g.fillText(i + 1, x + colW / 2, headH / 2); g.textAlign = "start"
-                        if (i % 4 === 0) { g.fillStyle = "#3b4048"; g.fillRect(x, headH, 1, height - headH) }   // bar lines
+                        if (c % 4 === 0) { g.fillStyle = "#3b4048"; g.fillRect(x, headH, 1, height - headH) }   // beat groups
                         if (i === page.playPos) { g.fillStyle = "rgba(89,255,122,0.15)"; g.fillRect(x, headH, colW, height - headH) }
                         if (i >= len) { g.fillStyle = "rgba(0,0,0,0.6)"; g.fillRect(x, headH, colW, height - headH) }   // greyed out
-                        // the block of this step
                         const s = page.steps[i]
-                        if (s && s.on && s.n >= lo && s.n <= hi) {
+                        if (!s || !s.on) continue
+                        const col = i < len ? (leg ? "#4ea1ff" : "#f0a020") : "#555"
+                        if (s.n >= lo && s.n <= hi) {   // the block of this step
                             const w = leg ? colW : colW * (page.pat.gate || 0.5)
-                            g.fillStyle = i < len ? (leg ? "#4ea1ff" : "#f0a020") : "#555"
-                            g.fillRect(x + 1, headH + rowOf(s.n) * rowH + 1, Math.max(3, w - 2), rowH - 3)
+                            g.fillStyle = col
+                            g.fillRect(x + 2, headH + rowOf(s.n) * rowH + 2, Math.max(6, w - 4), rowH - 5)
+                            if (w > 30) { g.fillStyle = "#111"; g.fillText(device.noteName(s.n), x + 5, headH + rowOf(s.n) * rowH + rowH / 2) }
+                        } else {                        // outside this octave: an arrow at the edge
+                            const up = s.n > hi, y = up ? headH + 2 : height - 12
+                            g.fillStyle = col; g.textAlign = "center"
+                            g.fillText((up ? "▲ " : "▼ ") + device.noteName(s.n), x + colW / 2, y + 5); g.textAlign = "start"
                         }
                     }
                 }
@@ -164,8 +208,9 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                     property bool had: false
                     property bool moved: false
                     onPressed: mouse => {
-                        step = Math.floor((mouse.x - roll.labelW) / roll.colW)
-                        if (step < 0 || step > 15) { step = -1; return }
+                        const c = Math.floor((mouse.x - roll.labelW) / roll.colW)
+                        if (c < 0 || c > 7) { step = -1; return }
+                        step = roll.first + c
                         if (mouse.y < roll.headH) { page.selStep = page.selStep === step ? -1 : step; step = -1; return }
                         const n = roll.hi - Math.floor((mouse.y - roll.headH) / roll.rowH)
                         const s = page.steps[step]
@@ -184,7 +229,6 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                         else if (moved) page.preview(page.steps[step].n)
                         page.dragging = false
                         page.sendSteps()
-                        page.stepsChanged()                              // `used` (range) may change
                         roll.requestPaint()
                         step = -1
                     }
@@ -197,7 +241,8 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                         page.steps[page.selStep].n = n; page.steps[page.selStep].on = true
                         page.sendSteps(); page.preview(n)
                         page.selStep = (page.selStep + 1) % (page.pat.length || 8)
-                        page.stepsChanged(); roll.requestPaint()
+                        page.stepPage = page.selStep >= 8 ? 1 : 0     // follow the selected step
+                        roll.requestPaint()
                     } else {
                         device.seqTrig(n)                  // play the sequence from this key
                     }
