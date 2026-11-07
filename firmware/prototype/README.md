@@ -55,8 +55,10 @@ full, the oldest record is overwritten. The web page shows it with a range picke
 24 h, 7 d, 14 d, 46 d), and `/log-full.csv?days=14` downloads it. No server or Raspberry Pi needed.
 (The optional [`backend/`](../../backend) with Mosquitto + SQLite is for later.)
 
-Logging needs the real time, which comes from NTP, so the ESP must be on your home WiFi
-(`wifi set`). In access-point mode nothing is stored (there is no clock).
+Logging needs the real time. On home WiFi it comes from NTP. In access-point mode (no
+internet) the web page gives the ESP the browser's clock as soon as you open it (`POST /api/time`),
+and logging starts then. After a reboot in AP mode, logging waits until a page is opened again.
+The *live* range (10 min) is kept in RAM and is lost on a reboot; the other ranges come from flash.
 
 ### REST API
 

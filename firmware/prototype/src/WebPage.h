@@ -453,6 +453,7 @@ function connectWs(){
 }
 
 // ================= LIVE VALUES (pushed once a second) =================
+let sentTime=false;
 async function onLive(s){
  try{
   lfoV=s.lfo_v;envV=s.env_v;$("envled").classList.toggle("on",s.env_v>.05);redraw();
@@ -465,7 +466,10 @@ async function onLive(s){
   $("outs").textContent=`LFO ${s.lfo_v.toFixed(2)} V · ENV ${s.env_v.toFixed(2)} V · V/oct ${s.voct_v.toFixed(3)} V (${nn(s.voct_note)})`;
   $("envout").textContent=s.env_out;
   $("net").textContent=`${s.wifi} · ${s.rssi} dBm · up ${s.uptime}s`+(s.mqtt?" · MQTT ok":"");
-  $("loginfo").textContent=s.time?`· ${s.log_count} samples stored`:"· log waits for NTP time (home WiFi)";
+  $("loginfo").textContent=s.time?`· ${s.log_count} samples stored`:"· log waits for the clock";
+  // The ESP has no clock yet (no internet in access-point mode): give it ours, so the flash log
+  // can start. With home WiFi NTP sets it and the ESP ignores this.
+  if(!s.time&&!sentTime){sentTime=true;post(`/api/time?t=${Math.floor(Date.now()/1000)}`);}
   if(!live()){if(s.uptime%60==0)loadRange();}
   else if(!H.t.length||s.uptime>H.t[H.t.length-1]){for(const k of ["temp","hz","drift","volts","rh"])H[k].push(s[{temp:"temp_c",hz:"hz",drift:"drift",volts:"volts",rh:"rh"}[k]]);H.t.push(s.uptime);
    if(H.t.length>600)for(const k in H)H[k].shift();}

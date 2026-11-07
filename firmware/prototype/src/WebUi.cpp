@@ -6,6 +6,7 @@
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 #include <WiFi.h>
+#include <sys/time.h>  // settimeofday
 
 #include "App.h"
 #include "MqttLink.h"
@@ -59,6 +60,10 @@ void WebUi::begin(Print &log) {
     configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.google.com");
   } else {
     apMode_ = true;
+    // No internet = no NTP. Belgian time zone anyway, so the CSV gets local times once the
+    // browser has given us the time (POST /api/time, see below).
+    setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
+    tzset();
     WiFi.mode(WIFI_AP);
     WiFi.softAP("SynthPatch", "synthpatch");
     log.printf("WiFi: access point 'SynthPatch' (password synthpatch), open http://%s\n",
@@ -381,6 +386,19 @@ void WebUi::routes() {
     if (server.hasArg("note")) app_.seq().trigger(server.arg("note").toInt());
     else app_.seq().trigger();
     server.send(200, "text/plain", "ok");
+  });
+
+  // The browser's clock, for when there is no NTP (access-point mode): the page sends it when it
+  // sees time == 0. NTP always wins: once the clock is valid, this is ignored.
+  server.on("/api/time", HTTP_POST, [this] {
+    long t = server.arg("t").toInt();
+    if (!App::timeValid() && t > 1700000000) {
+      timeval tv{t, 0};
+      settimeofday(&tv, nullptr);
+      server.send(200, "text/plain", "time set from the browser");
+    } else {
+      server.send(200, "text/plain", "time already valid");
+    }
   });
 
   server.on("/api/gate", HTTP_POST, [this] {
