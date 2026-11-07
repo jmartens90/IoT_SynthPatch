@@ -5,11 +5,14 @@
 #include <Arduino.h>
 
 #include "App.h"
+#include "BleLink.h"
 #include "MqttLink.h"
 #include "WebUi.h"
 
 App app;
-WebUi web(app);
+Api api(app);     // every command, for WiFi and Bluetooth alike
+WebUi web(app, api);
+BleLink ble(api);  // Bluetooth for the Android app, at the same time as WiFi
 MqttLink mqtt(app);
 
 static void help() {
@@ -135,13 +138,17 @@ void setup() {
   app.begin();
   Serial.print(app.hardwareReport().c_str());
   web.begin(Serial);
+  ble.begin("SynthPatch");
+  Serial.println("Bluetooth: advertising as 'SynthPatch' (Android app)");
   mqtt.begin(Serial);
   help();
 }
 
 void loop() {
   app.loop();
+  api.tick();  // samples the CV scope for both WiFi and Bluetooth
   web.loop();
+  ble.loop();
   mqtt.loop();
 
   static String line;

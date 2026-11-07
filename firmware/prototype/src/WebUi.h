@@ -14,16 +14,8 @@
 //                                                                  every note sent to V/oct
 //
 //   GET  /                      the GUI (WebPage.h)
-//   GET  /api/live              live values (the page gets them over the WebSocket)
-//   GET  /api/history           last 10 minutes, one sample per second
-//   GET  /api/events            last note events
-//   GET  /api/settings          all LFO/envelope parameters with min/max/unit
-//   POST /api/set?target=lfo1&name=rate&value=2.5
-//   POST /api/shape?target=lfo1&shape=saw
-//   POST /api/gate?on=1|0
-//   POST /api/note?n=60&on=1&tone=1   V/oct + gate (+ the test tone)
-//   POST /api/tone?hz=440             test tone, 0 = off
-//   GET  /log.csv               the history as CSV, for Excel
+//   GET/POST /api/...           all commands: the list is in Api.cpp (shared with Bluetooth)
+//   GET  /log.csv, /log-full.csv?days=14   downloads for Excel (HTTP only)
 //
 // WiFi: joins the network stored in NVS (shell: wifi set <ssid> <pass>). If there is none, or
 // it can't connect in 15 s, it opens its own access point "SynthPatch" (password synthpatch),
@@ -31,13 +23,14 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 
 class App;
+class Api;
+#include "Api.h"
 
 class WebUi {
  public:
-  explicit WebUi(App &app) : app_(app) {}
+  WebUi(App &app, Api &api) : app_(app), api_(api) {}
   void begin(Print &log);
   void loop();
   bool apMode() const { return apMode_; }
@@ -47,15 +40,8 @@ class WebUi {
 
  private:
   void routes();
-  void liveJson(JsonDocument &d);  // the live values, for /api/live and the WebSocket
-  void seqJson(JsonDocument &d);   // the sequencer position, for /api/seq/pos and the WebSocket
-  void push();                     // called from loop(): send over the WebSocket when needed
-  void notesJson(JsonDocument &d, uint32_t after);  // V/oct notes with n > after
-  uint32_t lastLivePush_ = 0, lastSeqPush_ = 0, lastCvMs_ = 0, notesSent_ = 0;
-  static constexpr int CV_PACK = 10;  // samples per "cv" message
-  float cv_[3][CV_PACK] = {};
-  int cvN_ = 0;
-  unsigned seqEpoch_ = ~0u;        // the sequencer epoch we last pushed (~0 = none yet)
-  App &app_;  // a reference member: must be set in the constructor, can never be null
+  App &app_;  // reference members: must be set in the constructor, can never be null
+  Api &api_;
+  Api::PushState push_;  // what the WebSocket clients already got
   bool apMode_ = false;
 };
