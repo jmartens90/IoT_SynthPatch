@@ -10,9 +10,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ScrollView {
+Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
-    contentWidth: availableWidth
     readonly property var lv: device.live
     readonly property bool shown: SwipeView.isCurrentItem
     function fmt(v, dec, unit) { return (v === undefined || v === null || isNaN(v)) ? "–" : Number(v).toFixed(dec) + (unit || "") }
@@ -28,12 +27,12 @@ ScrollView {
     }
 
     ColumnLayout {
-        width: page.availableWidth
-        spacing: 12
+        anchors { fill: parent; margins: 10 }
+        spacing: 10
 
         Panel {
-            title: "NOW"; Layout.margins: 12
-            subtitle: (lv.wifi ? "WiFi " + lv.wifi : "") + (lv.uptime ? " · up " + page.since(lv.uptime) : "")
+            title: "NOW"
+            subtitle: (lv.wifi ? "ESP on WiFi: " + lv.wifi : "") + (lv.uptime ? " · up " + page.since(lv.uptime) : "")
             GridLayout {
                 columns: 3; Layout.fillWidth: true; columnSpacing: 6; rowSpacing: 6
                 Repeater {
@@ -65,7 +64,7 @@ ScrollView {
         }
 
         Panel {
-            title: "HISTORY"; Layout.margins: 12
+            title: "HISTORY"; Layout.fillHeight: true
             subtitle: (device.history.t || []).length + " points"
             RowLayout {
                 Layout.fillWidth: true
@@ -86,7 +85,7 @@ ScrollView {
             }
             Canvas {
                 id: chart
-                Layout.fillWidth: true; Layout.preferredHeight: 220
+                Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 120
                 Connections { target: device; function onHistoryChanged() { chart.requestPaint() } }
                 onWidthChanged: requestPaint()
                 // One line, scaled to its own min..max. Gaps (null = no reading) break the line.

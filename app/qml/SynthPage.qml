@@ -3,9 +3,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ScrollView {
+Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
-    contentWidth: availableWidth
     readonly property var lfo: device.settings.lfo1 || {}
     readonly property var env: device.settings.env1 || {}
     function range(key) { return device.ranges[key] || { min: 0, max: 1 } }
@@ -17,20 +16,19 @@ ScrollView {
         square: x => x < .5 ? 1 : -1 })
 
     ColumnLayout {
-        width: page.availableWidth
-        spacing: 12
-        anchors.margins: 12
+        anchors { fill: parent; margins: 10 }
+        spacing: 10
 
         Panel {
+            Layout.fillHeight: true
             title: "LFO"; subtitle: clip ? "● CLIP · MCP4725 0..3.3 V" : "MCP4725 0..3.3 V"
-            Layout.margins: 12
             // offset ± depth outside 0..3.3 V: the DAC clips there
             property bool clip: (page.lfo.offset || 0) + (page.lfo.depth || 0) > 3.3 + 1e-3
                                 || (page.lfo.offset || 0) - (page.lfo.depth || 0) < -1e-3
 
             Canvas {   // two cycles of the wave, red where the DAC clips, live output as a dot
                 id: scope
-                Layout.fillWidth: true; Layout.preferredHeight: 110
+                Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 50
                 property real out: device.live.lfo_v || 0
                 onOutChanged: requestPaint()
                 Connections { target: device; function onSettingsChanged() { scope.requestPaint() } }
@@ -87,11 +85,11 @@ ScrollView {
         }
 
         Panel {
+            Layout.fillHeight: true
             title: "ENVELOPE"; subtitle: device.live.env_out || ""
-            Layout.margins: 12
             Canvas {   // the ADSR shape
                 id: adsr
-                Layout.fillWidth: true; Layout.preferredHeight: 100
+                Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 50
                 Connections { target: device; function onSettingsChanged() { adsr.requestPaint() } }
                 onPaint: {
                     const g = getContext("2d"), W = width, H = height, E = page.env

@@ -48,7 +48,7 @@ double DemoEsp::lfoAt(double t) const {
 }
 
 QJsonObject DemoEsp::seqMsg() const {
-  const double stepMs = 60000.0 / pattern_["bpm"].toDouble() / 4;
+  const double stepMs = 60000.0 / pattern_["bpm"].toDouble();  // one step per beat
   const int len = pattern_["length"].toInt();
   const double el = nowMs() - runStart_;
   const int pos = run_ ? int(el / stepMs) % len : -1;

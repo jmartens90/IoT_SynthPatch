@@ -5,6 +5,7 @@
 //   drag up/down          -> move the note
 //   tap a block           -> delete it (the step becomes a rest)
 //   tap a step number     -> select it; the keyboard below then writes notes into that step
+// Everything fits one screen (no scrolling), the roll rows share the height that is left.
 // With no step selected, a key RESTARTS the sequence transposed: the bottom C (C3) = your key.
 //
 // The running light: the ESP only says "step 3, 40 ms into it, 125 ms per step" when something
@@ -16,9 +17,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ScrollView {
+Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
-    contentWidth: availableWidth
     readonly property var pat: device.pattern
     readonly property bool running: device.seqState.run === true
     property int selStep: -1          // step chosen for keyboard entry, -1 = keys transpose
@@ -50,11 +50,11 @@ ScrollView {
     }
 
     ColumnLayout {
-        width: page.availableWidth
-        spacing: 12
+        anchors { fill: parent; margins: 10 }
+        spacing: 10
 
         Panel {
-            title: "SEQUENCER"; Layout.margins: 12
+            title: "SEQUENCER"
             subtitle: device.seqState.tr ? "transpose " + (device.seqState.tr > 0 ? "+" : "") + device.seqState.tr
                                            + " (C3 → " + device.noteName(48 + device.seqState.tr) + ")" : "transpose 0"
             RowLayout {
@@ -65,9 +65,7 @@ ScrollView {
                     onClicked: device.seqRun(!page.running)
                 }
                 Button { text: "↺ TRIG"; Layout.fillWidth: true; onClicked: device.seqTrig() }
-            }
-            RowLayout {
-                Layout.fillWidth: true
+                // RETRIG = a new gate every step, LEGATO = one gate per loop (GATE knob unused)
                 Button {
                     text: "RETRIG"; checkable: true; checked: page.pat.mode !== "legato"; Layout.fillWidth: true
                     onClicked: device.seqSet({ mode: "retrig" })
@@ -76,10 +74,6 @@ ScrollView {
                     text: "LEGATO"; checkable: true; checked: page.pat.mode === "legato"; Layout.fillWidth: true
                     onClicked: device.seqSet({ mode: "legato" })
                 }
-            }
-            Text {
-                text: page.pat.mode === "legato" ? "one gate per loop, GATE knob not used" : "new gate every step"
-                color: "#8a929c"; font.pixelSize: 11
             }
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter; spacing: 24
@@ -106,7 +100,7 @@ ScrollView {
         }
 
         Panel {
-            title: "PIANO ROLL"; Layout.margins: 12
+            title: "PIANO ROLL"; Layout.fillHeight: true
             subtitle: page.selStep >= 0 ? "step " + (page.selStep + 1) + " selected: keys write notes" : "keys play transposed"
 
             Canvas {
@@ -119,8 +113,9 @@ ScrollView {
                 readonly property real labelW: 30
                 readonly property real headH: 20
                 readonly property real colW: (width - labelW) / 16
-                readonly property real rowH: 14
-                Layout.preferredHeight: headH + (hi - lo + 1) * rowH
+                // the rows share whatever height the screen leaves for the roll
+                readonly property real rowH: (height - headH) / (hi - lo + 1)
+                Layout.fillHeight: true
                 onWidthChanged: requestPaint()
                 onHeightChanged: requestPaint()
                 Connections { target: page; function onSelStepChanged() { roll.requestPaint() } }
@@ -162,7 +157,7 @@ ScrollView {
                 // Touch: which step and note is under the finger?
                 MouseArea {
                     anchors.fill: parent
-                    preventStealing: true          // the ScrollView must not take our vertical drag
+                    preventStealing: true          // keep the whole drag, even when the finger moves fast
                     property int step: -1
                     property int note0: 0
                     property real y0: 0
@@ -195,12 +190,8 @@ ScrollView {
                     }
                 }
             }
-        }
-
-        Panel {
-            title: "KEYBOARD"; Layout.margins: 12; subtitle: "C3 .. C5"
             Keyboard {
-                Layout.fillWidth: true
+                Layout.fillWidth: true; Layout.preferredHeight: 80
                 onPressedKey: n => {
                     if (page.selStep >= 0) {               // step entry
                         page.steps[page.selStep].n = n; page.steps[page.selStep].on = true

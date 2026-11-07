@@ -19,7 +19,7 @@
 // trigger(note) does the same AND transposes: the steps are written relative to C3 (MIDI 48,
 // the bottom C of the web keyboard), so pressing E3 plays the whole sequence 4 semitones higher.
 //
-// Steps are 16th notes: one step = 60 / bpm / 4 seconds.
+// BPM counts steps: one step = one beat = 60 / bpm seconds (120 BPM = 2 steps per second).
 //
 // C++ lesson: std::array (a fixed-size array that knows its size and can be copied), a std::mutex
 // because the web task writes the settings while the engine task reads them, and COLLECTING the
@@ -101,7 +101,7 @@ class Sequencer {
   };
   void enterStep(Events &out);  // the start of step pos_
   void emit(const Events &ev);
-  float stepSeconds() const { return 60.0f / pat_.bpm / 4.0f; }
+  float stepSeconds() const { return 60.0f / pat_.bpm; }
 
   std::mutex m_;
   Pattern pat_;

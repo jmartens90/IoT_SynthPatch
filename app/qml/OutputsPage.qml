@@ -5,20 +5,20 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ScrollView {
+Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
-    contentWidth: availableWidth
     readonly property bool shown: SwipeView.isCurrentItem   // only draw when you can see it
 
     ColumnLayout {
-        width: page.availableWidth
-        spacing: 12
+        anchors { fill: parent; margins: 10 }
+        spacing: 10
 
         Panel {
-            title: "OUTPUTS"; Layout.margins: 12; subtitle: "last 10 s, every 20 ms"
+            Layout.fillHeight: true
+            title: "OUTPUTS"; subtitle: "last 10 s, every 20 ms"
             Canvas {
                 id: cvs
-                Layout.fillWidth: true; Layout.preferredHeight: 320
+                Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 150
                 Connections { target: device; function onCvChanged() { if (page.shown) cvs.requestPaint() } }
                 onPaint: {
                     const g = getContext("2d"), W = width, Hh = height, N = 500, CV = device.cv
@@ -59,9 +59,11 @@ ScrollView {
                 }
             }
             Text { text: "NOTE LOG (V/oct DAC)"; color: "#8a929c"; font.pixelSize: 11; font.letterSpacing: 1 }
-            Repeater {   // newest first
-                model: device.notes.slice().reverse().slice(0, 32)
-                Text {
+            ListView {   // newest first; shows as many lines as fit, no scrolling
+                Layout.fillWidth: true; Layout.preferredHeight: 150
+                interactive: false; clip: true
+                model: device.notes.slice().reverse()
+                delegate: Text {
                     font.family: "monospace"; font.pixelSize: 11; color: "#c8ccd2"
                     text: (modelData.ms / 1000).toFixed(2).padStart(8) + " s  " + device.noteName(modelData.note).padEnd(4)
                           + modelData.v.toFixed(3) + " V  code " + String(modelData.code).padStart(5) + "  " + modelData.src

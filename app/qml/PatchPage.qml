@@ -10,20 +10,19 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ScrollView {
+Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
-    contentWidth: availableWidth
     property int bank: 0
     property int slot: -1
     readonly property var current: slot >= 0 ? (device.patches[slot] || {}) : {}
     readonly property bool empty: !current.name
 
     ColumnLayout {
-        width: page.availableWidth
-        spacing: 12
+        anchors { fill: parent; margins: 10 }
+        spacing: 10
 
         Panel {
-            title: "PATCH MEMORY"; Layout.margins: 12
+            title: "PATCH MEMORY"
             subtitle: page.slot >= 0 ? (page.current.label || "") + (page.empty ? " (empty)" : "") : "choose a slot"
 
             RowLayout {
@@ -90,6 +89,7 @@ ScrollView {
                 color: "#8a929c"; font.pixelSize: 11; wrapMode: Text.Wrap; Layout.fillWidth: true
             }
         }
+        Item { Layout.fillHeight: true }   // pushes the panel to the top
     }
 
     Dialog {

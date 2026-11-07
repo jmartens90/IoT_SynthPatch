@@ -13,7 +13,7 @@ Rectangle {
 
     ColumnLayout {
         id: col
-        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
+        anchors { fill: parent; margins: 12 }   // fills the panel: a canvas inside can take the spare height
         spacing: 8
         RowLayout {
             Layout.fillWidth: true
@@ -21,6 +21,6 @@ Rectangle {
             Item { Layout.fillWidth: true }
             Text { text: panel.subtitle; color: "#8a929c"; font.pixelSize: 11 }
         }
-        ColumnLayout { id: inner; Layout.fillWidth: true; spacing: 8 }
+        ColumnLayout { id: inner; Layout.fillWidth: true; Layout.fillHeight: true; spacing: 8 }
     }
 }

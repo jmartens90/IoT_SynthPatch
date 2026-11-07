@@ -9,7 +9,7 @@ Item {
     property int low: 48
     property int high: 72
     signal pressedKey(int note)
-    implicitHeight: 110
+    implicitHeight: 80
 
     readonly property var whites: { const w = []; for (let n = low; n <= high; n++) if (![1, 3, 6, 8, 10].includes(n % 12)) w.push(n); return w }
     readonly property var blacks: { const b = []; for (let n = low; n <= high; n++) if ([1, 3, 6, 8, 10].includes(n % 12)) b.push(n); return b }

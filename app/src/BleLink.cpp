@@ -59,7 +59,7 @@ void BleLink::start() {
 
 void BleLink::scan() {
   if (state_ == State::Connected || state_ == State::Connecting) return;
-  setState(State::Scanning, tr("looking for SynthPatch…"));
+  setState(State::Scanning, tr("Bluetooth: looking for SynthPatch…"));
   agent_.start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }
 
@@ -96,7 +96,7 @@ void BleLink::setupService() {
     QLowEnergyDescriptor cccd = tx_.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
     svc_->writeDescriptor(cccd, QLowEnergyCharacteristic::CCCDEnableNotification);
     rxBuf_.clear();
-    setState(State::Connected, tr("connected to %1").arg(name_));
+    setState(State::Connected, tr("Bluetooth: connected to %1").arg(name_));
   });
   connect(svc_, &QLowEnergyService::characteristicChanged, this,
           [this](const QLowEnergyCharacteristic &, const QByteArray &v) { onBytes(v); });
