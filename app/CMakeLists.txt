@@ -15,6 +15,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Bluetooth)
 qt_standard_project_setup()
+# Qt >= 6.5: use the new default QML resource path (silences the QTP0001 warning).
+# main.cpp loads Main.qml by module name there, so the path itself does not matter.
+if(QT_KNOWN_POLICY_QTP0001)
+    qt_policy(SET QTP0001 NEW)
+endif()
+if(QT_KNOWN_POLICY_QTP0004)
+    qt_policy(SET QTP0004 NEW)
+endif()
 
 qt_add_executable(SynthPatchApp
     src/main.cpp
