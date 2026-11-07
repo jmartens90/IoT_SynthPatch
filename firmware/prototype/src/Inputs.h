@@ -20,10 +20,13 @@ class FrequencyInput {
   void begin();
   // Frequency over the time since the last call, 0 if fewer than 3 edges (no signal).
   float measure();
+  bool noisy() const { return noisy_; }  // too many edges: the interrupt is paused
 
  private:
   static void IRAM_ATTR onEdge();
   int pin_;
+  bool noisy_ = false;
+  uint32_t pausedAt_ = 0;
   static volatile uint32_t edges_;
   static volatile int64_t first_, last_;
   static portMUX_TYPE mux_;
