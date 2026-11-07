@@ -21,7 +21,7 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
 
         Panel {
             Layout.fillHeight: true
-            title: "LFO"; subtitle: clip ? "● CLIP · MCP4725 0..3.3 V" : "MCP4725 0..3.3 V"
+            title: "LFO"; subtitle: clip ? "CLIP! · MCP4725 0..3.3 V" : "MCP4725 0..3.3 V"
             // offset ± depth outside 0..3.3 V: the DAC clips there
             property bool clip: (page.lfo.offset || 0) + (page.lfo.depth || 0) > 3.3 + 1e-3
                                 || (page.lfo.offset || 0) - (page.lfo.depth || 0) < -1e-3

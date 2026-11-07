@@ -20,7 +20,7 @@ ApplicationWindow {
             Text { text: "SYNTHPATCH"; color: "#e6e6e6"; font.bold: true; font.letterSpacing: 4 }
             Rectangle { width: 10; height: 10; radius: 5; color: device.connected ? "#59ff7a" : "#ff4d4d" }
             Text { text: device.status; color: "#8a929c"; font.pixelSize: 12; elide: Text.ElideRight; Layout.fillWidth: true }
-            ToolButton { text: "↻"; onClicked: device.connected ? device.refreshAll() : device.start() }
+            ToolButton { text: device.connected ? "RELOAD" : "SCAN"; font.pixelSize: 12; onClicked: device.connected ? device.refreshAll() : device.start() }
         }
     }
 

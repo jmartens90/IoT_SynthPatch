@@ -67,23 +67,29 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
 
         Panel {
             title: "SEQUENCER"
-            subtitle: device.seqState.tr ? "transpose " + (device.seqState.tr > 0 ? "+" : "") + device.seqState.tr
-                                           + " (C3 → " + device.noteName(48 + device.seqState.tr) + ")" : "transpose 0"
+            // the step time the ESP really uses: lets you check the tempo (120 BPM = 500 ms)
+            subtitle: (device.seqState.step_ms ? Math.round(device.seqState.step_ms) + " ms/step · " : "")
+                      + (device.seqState.tr ? "transpose " + (device.seqState.tr > 0 ? "+" : "") + device.seqState.tr
+                                           + " (C3 = " + device.noteName(48 + device.seqState.tr) + ")" : "transpose 0")
             RowLayout {
                 Layout.fillWidth: true
                 Button {
-                    text: page.running ? "■ STOP" : "▶ PLAY"; Layout.fillWidth: true
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13   // small padding: on a phone the full word must fit
+                    text: page.running ? "STOP" : "PLAY"; Layout.fillWidth: true; Layout.preferredWidth: 1
                     highlighted: page.running
                     onClicked: device.seqRun(!page.running)
                 }
-                Button { text: "↺ TRIG"; Layout.fillWidth: true; onClicked: device.seqTrig() }
+                Button {
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13; text: "TRIG"; Layout.fillWidth: true; Layout.preferredWidth: 1; onClicked: device.seqTrig() }
                 // RETRIG = a new gate every step, LEGATO = one gate per loop (GATE knob unused)
                 Button {
-                    text: "RETRIG"; checkable: true; checked: page.pat.mode !== "legato"; Layout.fillWidth: true
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13
+                    text: "RETRIG"; checkable: true; checked: page.pat.mode !== "legato"; Layout.fillWidth: true; Layout.preferredWidth: 1
                     onClicked: device.seqSet({ mode: "retrig" })
                 }
                 Button {
-                    text: "LEGATO"; checkable: true; checked: page.pat.mode === "legato"; Layout.fillWidth: true
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13
+                    text: "LEGATO"; checkable: true; checked: page.pat.mode === "legato"; Layout.fillWidth: true; Layout.preferredWidth: 1
                     onClicked: device.seqSet({ mode: "legato" })
                 }
             }
@@ -120,24 +126,28 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
             RowLayout {
                 Layout.fillWidth: true; spacing: 4
                 Button {
-                    text: "1–8"; checkable: true; checked: page.stepPage === 0; Layout.fillWidth: true
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13
+                    text: "1-8"; checkable: true; checked: page.stepPage === 0; Layout.fillWidth: true
                     visible: (page.pat.length || 8) > 8
                     font.bold: page.playPos >= 0 && page.playPos < 8     // bold = the running light is here
                     onClicked: page.stepPage = 0
                 }
                 Button {
-                    text: "9–16"; checkable: true; checked: page.stepPage === 1; Layout.fillWidth: true
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13
+                    text: "9-16"; checkable: true; checked: page.stepPage === 1; Layout.fillWidth: true
                     visible: (page.pat.length || 8) > 8
                     font.bold: page.playPos >= 8
                     onClicked: page.stepPage = 1
                 }
                 Item { Layout.fillWidth: true; visible: (page.pat.length || 8) <= 8 }
-                Button { text: "▼"; onClicked: page.octLo = Math.max(0, page.octLo - 12); Layout.preferredWidth: 48 }
+                Button {
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13; text: "OCT -"; onClicked: page.octLo = Math.max(0, page.octLo - 12); Layout.preferredWidth: 72 }
                 Label {
-                    text: device.noteName(page.octLo) + "–" + device.noteName(page.octLo + 12)
+                    text: device.noteName(page.octLo) + "-" + device.noteName(page.octLo + 12)
                     horizontalAlignment: Text.AlignHCenter; Layout.preferredWidth: 64; color: "#e6e6e6"
                 }
-                Button { text: "▲"; onClicked: page.octLo = Math.min(108, page.octLo + 12); Layout.preferredWidth: 48 }
+                Button {
+                    leftPadding: 4; rightPadding: 4; font.pixelSize: 13; text: "OCT +"; onClicked: page.octLo = Math.min(108, page.octLo + 12); Layout.preferredWidth: 72 }
             }
 
             Canvas {
@@ -193,7 +203,7 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                         } else {                        // outside this octave: an arrow at the edge
                             const up = s.n > hi, y = up ? headH + 2 : height - 12
                             g.fillStyle = col; g.textAlign = "center"
-                            g.fillText((up ? "▲ " : "▼ ") + device.noteName(s.n), x + colW / 2, y + 5); g.textAlign = "start"
+                            g.fillText((up ? "^ " : "v ") + device.noteName(s.n), x + colW / 2, y + 5); g.textAlign = "start"
                         }
                     }
                 }
