@@ -48,7 +48,7 @@ void Sequencer::tick(float dt) {
 
 void Sequencer::enterStep(Events &out) {
   const Step &s = pat_.steps[pos_];
-  if (s.on) out.add({Event::Note, s.note});
+  if (s.on) out.add({Event::Note, std::clamp(s.note + transpose_, 0, 127)});
   if (pat_.mode == Mode::Retrig) {
     if (s.on) out.add({Event::GateOn, 0});
   } else if (pos_ == 0) {
@@ -79,6 +79,24 @@ void Sequencer::trigger() {
   std::lock_guard<std::mutex> lock(m_);
   stop_ = false;
   restart_ = true;
+}
+
+void Sequencer::trigger(int rootNote) {
+  std::lock_guard<std::mutex> lock(m_);
+  transpose_ = rootNote - ROOT_NOTE;
+  stop_ = false;
+  restart_ = true;
+}
+
+int Sequencer::transpose() {
+  std::lock_guard<std::mutex> lock(m_);
+  return transpose_;
+}
+
+Sequencer::Status Sequencer::status() {
+  std::lock_guard<std::mutex> lock(m_);
+  bool run = (running_ && !stop_) || restart_;
+  return {run, running_ ? pos_ : -1, pat_.length, stepSeconds(), t_, transpose_};
 }
 
 bool Sequencer::running() {

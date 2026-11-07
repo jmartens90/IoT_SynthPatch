@@ -30,7 +30,9 @@ Wiring: [WIRING.md](WIRING.md).
 * **Sequencer:** 16 steps (note + on/off), 20–300 BPM, 1–16 steps, run by the ESP in the 1 kHz
   engine task (`../synthpatch/lib/engine/Sequencer.h`, tested on the PC). RETRIG = a new gate every
   step (GATE knob = gate length), LEGATO = one gate per loop and only the pitch changes. TRIG, the
-  BOOT button or a rising edge on GPIO 5 restarts it at step 1. The sequence is saved in the patch.
+  BOOT button or a rising edge on GPIO 5 restarts it at step 1. A key on the web keyboard (with no
+  step selected) restarts it transposed: the steps are written relative to C3, so pressing E3 plays
+  everything 4 semitones up. The sequence is saved in the patch; shell `seq` prints the steps.
 * **Dashboard + interaction:** web page at `http://synthpatch.local` with live values, a 10-minute
   chart (temperature + drift / Hz / volts, note changes as lines), LFO and envelope controls, gate
   button and a keyboard. CSV download of the log.

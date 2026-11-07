@@ -16,6 +16,8 @@
 //
 // trigger() restarts at step 1 and starts playing (the BOOT button, the gate input, the web
 // TRIG button). So a gate can (re)start the loop in sync with other gear.
+// trigger(note) does the same AND transposes: the steps are written relative to C3 (MIDI 48,
+// the bottom C of the web keyboard), so pressing E3 plays the whole sequence 4 semitones higher.
 //
 // Steps are 16th notes: one step = 60 / bpm / 4 seconds.
 //
@@ -35,6 +37,7 @@ namespace synth {
 class Sequencer {
  public:
   static constexpr int MAX_STEPS = 16;
+  static constexpr int ROOT_NOTE = 48;  // C3: a key press of C3 plays the steps as written
   enum class Mode { Retrig, Legato };
 
   struct Step {
@@ -60,7 +63,20 @@ class Sequencer {
   // ---- called from any task ----
   void start();
   void stop();     // also closes the gate
-  void trigger();  // restart at step 1 and run
+  void trigger();             // restart at step 1 and run, same transposition
+  void trigger(int rootNote);  // restart at step 1, transposed by rootNote - ROOT_NOTE
+  int transpose();             // semitones
+
+  // Everything the page needs for the running light, read under one lock (so it is consistent).
+  struct Status {
+    bool running;
+    int pos;          // step playing now, -1 when stopped
+    int length;
+    float stepS;      // seconds per step
+    float inStepS;    // seconds since this step began
+    int transpose;
+  };
+  Status status();
   bool running();
   int position();  // step that is playing now, -1 when stopped
 
@@ -94,6 +110,7 @@ class Sequencer {
   bool stop_ = false;        // stop() asks tick() to stop and close the gate
   int pos_ = 0;              // current step
   float t_ = 0.0f;           // seconds since the current step began
+  int transpose_ = 0;        // semitones added to every step note
 };
 
 }  // namespace synth

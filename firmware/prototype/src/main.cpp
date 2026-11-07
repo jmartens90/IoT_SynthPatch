@@ -117,8 +117,10 @@ static void command(const String &line) {
     else if (arg(1) == "stop") app.seq().stop();
     else if (arg(1) == "trig") app.seq().trigger();
     auto p = app.seq().pattern();
-    Serial.printf("  %s, %.0f bpm, %d steps, %s\n", app.seq().running() ? "running" : "stopped", p.bpm, p.length,
-                  synth::Sequencer::modeName(p.mode));
+    Serial.printf("  %s, %.0f bpm, %d steps, %s, transpose %+d\n  steps:", app.seq().running() ? "running" : "stopped",
+                  p.bpm, p.length, synth::Sequencer::modeName(p.mode), app.seq().transpose());
+    for (int i = 0; i < p.length; i++) Serial.printf(" %d%s", p.steps[i].note, p.steps[i].on ? "" : "(off)");
+    Serial.printf("\n  V/oct now %.3f V\n", app.voct().last());
   } else if (c == "gate") {
     app.gate(arg(1) == "on", "shell");
   } else {

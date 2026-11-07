@@ -212,6 +212,16 @@ static void testSequencer() {
   const std::vector<std::string> legato = {"n60@0", "on@0", "n64@200", "off@295", "n60@300", "on@300"};
   CHECK(log.ev == legato);
 
+  // A key press transposes: E3 (52) = 4 semitones above C3, the steps' reference.
+  log.ev.clear();
+  now = 0;
+  q.trigger(52);
+  runSeq(q, log, 1, now);
+  CHECK(q.transpose() == 4 && log.ev.size() >= 2 && log.ev[1] == "n64@0");  // [0] closes the old gate
+  q.trigger();  // a plain trigger keeps the transposition
+  runSeq(q, log, 1, now);
+  CHECK(q.transpose() == 4 && q.status().pos == 0 && q.status().length == 3);
+
   // Values are clamped.
   p.length = 99;
   p.bpm = 1;

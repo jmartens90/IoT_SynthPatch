@@ -249,18 +249,24 @@ void WebUi::routes() {
     app_.seq().setPattern(p);
     server.send(200, "text/plain", "ok");
   });
-  // Small and fast, polled by the page ~8x per second for the running light.
+  // Small, polled by the page twice a second. The page animates the running light itself from
+  // pos + how far into the step we are + the step time, so it doesn't skip steps between polls.
   server.on("/api/seq/pos", HTTP_GET, [this] {
-    server.send(200, "application/json",
-                String("{\"pos\":") + String(app_.seq().position()) + ",\"run\":" + (app_.seq().running() ? "true}" : "false}"));
+    synth::Sequencer::Status s = app_.seq().status();
+    char out[128];
+    snprintf(out, sizeof(out), "{\"run\":%s,\"pos\":%d,\"len\":%d,\"step_ms\":%.1f,\"in_ms\":%.1f,\"tr\":%d}",
+             s.running ? "true" : "false", s.pos, s.length, s.stepS * 1000, s.inStepS * 1000, s.transpose);
+    server.send(200, "application/json", out);
   });
   server.on("/api/seq/run", HTTP_POST, [this] {
     if (server.arg("on") == "1") app_.seq().start();
     else app_.seq().stop();
     server.send(200, "text/plain", "ok");
   });
+  // ?note=52 = restart transposed (a key press), without note = restart as it is (TRIG button)
   server.on("/api/seq/trig", HTTP_POST, [this] {
-    app_.seq().trigger();
+    if (server.hasArg("note")) app_.seq().trigger(server.arg("note").toInt());
+    else app_.seq().trigger();
     server.send(200, "text/plain", "ok");
   });
 

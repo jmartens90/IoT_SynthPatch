@@ -101,12 +101,14 @@ a{color:#9fb3c8}
   <button id="play">▶ PLAY</button><button id="stop">■ STOP</button><button id="trig" title="restart at step 1">TRIG</button>
   <span style="width:16px"></span>
   <button id="mRetrig" title="a new gate for every step">RETRIG</button><button id="mLegato" title="one gate per loop, only the pitch changes">LEGATO</button>
-  <span class="hint" id="mhint"></span>
+  <span class="hint" id="mhint"></span><span style="flex:1"></span><b id="trans" style="color:var(--accent)"></b>
  </div>
  <div class="knobs" id="seqKnobs" style="justify-content:flex-start;gap:18px"></div>
  <div class="steps" id="steps"></div>
- <p class="hint">Click a step to select it, then press a key to set its note (the next step is selected after that).
- Drag a note up/down or use the wheel to change it by a semitone. ON/OFF = play or rest.</p>
+ <p class="hint"><b>Write:</b> click a step, then press keys: each key fills the selected step and moves on.
+ Drag a note up/down or use the wheel for a semitone. ON/OFF = play or rest.
+ <b>Play:</b> with no step selected (click it again to deselect), a key restarts the sequence from step 1,
+ transposed so the bottom C = the key you pressed.</p>
  <label class="hint"><input type="checkbox" id="tonek" checked> keys also play the note on the test tone (GPIO 17 → 13)</label>
  <div class="keys" id="keys"></div></section>
 
@@ -281,7 +283,7 @@ function buildSeq(){
  knob($("seqKnobs"),"seq",{name:"bpm",min:20,max:300},{label:"BPM",def:120,fmt:v=>Math.round(v)+"",send:sendNum("bpm")});
  knob($("seqKnobs"),"seq",{name:"gate",min:.05,max:.95},{label:"GATE",def:.5,fmt:v=>Math.round(v*100)+" %",send:sendNum("gate")});
  knob($("seqKnobs"),"seq",{name:"length",min:1,max:16},{label:"STEPS",def:8,fmt:v=>Math.round(v)+"",send:sendNum("length")});
- $("play").onclick=()=>post("/api/seq/run?on=1");$("stop").onclick=()=>post("/api/seq/run?on=0");$("trig").onclick=()=>post("/api/seq/trig");
+ $("play").onclick=()=>seqCmd("/api/seq/run?on=1");$("stop").onclick=()=>seqCmd("/api/seq/run?on=0");$("trig").onclick=()=>seqCmd("/api/seq/trig");
  $("mRetrig").onclick=()=>setMode("retrig");$("mLegato").onclick=()=>setMode("legato");
  drawSteps();showMode();
 }
@@ -304,25 +306,41 @@ function drawSteps(){
   nt.onwheel=e=>{e.preventDefault();setN(st.n-Math.sign(e.deltaY));clearTimeout(nt.t);nt.t=setTimeout(sendSteps,150);};
   box.appendChild(d);});
 }
-let seqPos=-1;
-async function pollSeq(){                                  // running light, ~7x per second
- try{const r=await (await fetch("/api/seq/pos")).json();
-  if(r.pos!==seqPos){$("sl"+seqPos)?.classList.remove("on");seqPos=r.pos;$("sl"+seqPos)?.classList.add("on");}
-  $("play").classList.toggle("on",r.run);}catch(e){}
- setTimeout(pollSeq,150);
+// Running light. Asking the ESP 8x a second still skipped steps (a step at 120 BPM is 125 ms,
+// about as long as a poll), so: ask twice a second where it is (step, ms into the step, step time)
+// and let the browser count the steps in between with its own clock.
+let seqPos=-1, R={run:false,pos:-1,len:8,step_ms:125,in_ms:0,tr:0}, rAt=0;
+async function pollSeq(again=true){
+ try{R=await (await fetch("/api/seq/pos")).json();rAt=performance.now();
+  $("play").classList.toggle("on",R.run);
+  $("trans").textContent=R.tr?`transpose ${R.tr>0?"+":""}${R.tr} (C3 → ${nn(48+R.tr)})`:"transpose 0";}catch(e){}
+ if(again)setTimeout(pollSeq,500);
+}
+const seqCmd=async u=>{await post(u);pollSeq(false);};   // after play/stop/trig: re-sync the light at once
+function animSeq(){
+ let p=-1;
+ if(R.run&&R.pos>=0)p=(R.pos+Math.floor((R.in_ms+performance.now()-rAt)/R.step_ms))%R.len;
+ if(p!==seqPos){$("sl"+seqPos)?.classList.remove("on");seqPos=p;$("sl"+seqPos)?.classList.add("on");}
+ requestAnimationFrame(animSeq);
 }
 
 // ================= GATE + KEYBOARD =================
 const hold=(el,on,off)=>{el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);el.classList.add("on");on();};
  el.onpointerup=el.onpointercancel=()=>{el.classList.remove("on");off();};};
 hold($("gate"),()=>post("/api/gate?on=1"),()=>post("/api/gate?on=0"));
-// A key with a step selected = step entry: write the note there and select the next step.
-// While the sequencer runs, keys only enter notes (they don't play, the sequencer owns V/oct).
+// Two jobs for the keys:
+//  * a step is selected  -> STEP ENTRY: write the note there, select the next step
+//                           (and play the note so you hear it, when the sequencer is stopped)
+//  * no step selected    -> PLAY THE SEQUENCE from this key: restart at step 1, transposed so the
+//                           bottom C (C3) of the keyboard = the key you pressed
 for(let n=48;n<=72;n++){const k=document.createElement("div");k.className="k"+([1,3,6,8,10].includes(n%12)?" b":"");k.title=nn(n);
+ const running=()=>$("play").classList.contains("on");
+ let preview=false;
  hold(k,()=>{
-   if(selStep>=0){S.seq.steps[selStep].n=n;S.seq.steps[selStep].on=true;sendSteps();selStep=(selStep+1)%Math.round(S.seq.length);drawSteps();}
-   if(!$("play").classList.contains("on"))post(`/api/note?n=${n}&on=1&tone=${$("tonek").checked?1:0}`);},
-  ()=>{if(!$("play").classList.contains("on"))post(`/api/note?n=${n}&on=0`);});
+   if(selStep>=0){S.seq.steps[selStep].n=n;S.seq.steps[selStep].on=true;sendSteps();selStep=(selStep+1)%Math.round(S.seq.length);drawSteps();
+     if(!running()){preview=true;post(`/api/note?n=${n}&on=1&tone=${$("tonek").checked?1:0}`);}}
+   else seqCmd(`/api/seq/trig?note=${n}`);},
+  ()=>{if(preview){preview=false;post(`/api/note?n=${n}&on=0`);}});
  $("keys").appendChild(k);}
 
 // ================= HISTORY CHART (IoT monitor) =================
@@ -358,7 +376,7 @@ async function tick(){
   $("note").textContent=s.hz>0?`${nn(s.note)} ${s.cents_off>=0?"+":""}${s.cents_off.toFixed(1)}¢`:"-";
   $("drift").textContent=`${s.drift.toFixed(1)}¢ (${s.drift_per_min>=0?"+":""}${s.drift_per_min.toFixed(1)}/min)`;
   $("volts").textContent=s.volts.toFixed(3)+" V";
-  $("outs").textContent=`LFO ${s.lfo_v.toFixed(2)} V · ENV ${s.env_v.toFixed(2)} V · V/oct ${s.voct_v.toFixed(3)} V`;
+  $("outs").textContent=`LFO ${s.lfo_v.toFixed(2)} V · ENV ${s.env_v.toFixed(2)} V · V/oct ${s.voct_v.toFixed(3)} V (${nn(s.voct_note)})`;
   $("envout").textContent=s.env_out;
   $("net").textContent=`${s.wifi} · ${s.rssi} dBm · up ${s.uptime}s`+(s.mqtt?" · MQTT ok":"");
   $("loginfo").textContent=s.time?`· ${s.log_count} samples stored`:"· log waits for NTP time (home WiFi)";
@@ -371,5 +389,5 @@ async function tick(){
 }
 async function loadEvents(){EV=await (await fetch("/api/events")).json();
  $("ev").innerHTML=EV.slice().reverse().map(e=>`${e.t}s: ${nn(e.from)} → <b>${nn(e.to)}</b>`).join("<br>");}
-(async()=>{await loadSettings();await loadSeq();buildModules();buildSeq();pollSeq();redraw();await listPatches();await loadRange();await loadEvents();tick();setInterval(tick,1000);})();
+(async()=>{await loadSettings();await loadSeq();buildModules();buildSeq();pollSeq();animSeq();redraw();await listPatches();await loadRange();await loadEvents();tick();setInterval(tick,1000);})();
 </script></body></html>)HTML";
