@@ -34,6 +34,16 @@ struct Sample {
   float volts;       // ADC input
 };
 
+// One note sent to the V/oct DAC (from the sequencer, the web keyboard or the shell).
+struct VoctEvent {
+  uint32_t n;          // running number, so the web side knows which ones it already sent
+  uint32_t ms;         // millis() when it was written
+  int note;            // MIDI note
+  float volts;         // what the DAC was asked for
+  uint16_t code;       // the 16-bit code that went to the AD5693R
+  const char *src;     // "seq", "web", "shell" (string literals, so a pointer is enough)
+};
+
 struct NoteEvent {
   uint32_t t;
   int from, to;      // MIDI notes, -1 = none
@@ -66,6 +76,7 @@ class App {
   void gate(bool on, const char *source);
   void playNote(int midi, bool on, const char *source);   // V/oct + envelope gate
   void setVoctVolts(float v) { voct_.setVolts(v); }
+  void outputNote(int midi, const char *source);  // V/oct to a note + log it in voctLog()
   bool setVoctCode(uint16_t c) { return voct_.writeCode(c); }
   bool setVoctGain2(bool on) { return voct_.setGain2(on); }
   bool calibrateVoct(uint16_t c1, float v1, uint16_t c2, float v2);
@@ -76,7 +87,11 @@ class App {
   Live live();
   SettingsMirror &settings() { return settings_; }
   History<Sample, 600> &history() { return history_; }        // 10 minutes at 1 Hz
-  History<NoteEvent, 20> &noteEvents() { return events_; }
+  History<NoteEvent, 20> &noteEvents() { return events_; }      // notes heard on the INPUT
+  History<VoctEvent, 32> &voctLog() { return voctLog_; }        // notes sent to the V/oct OUTPUT
+  uint32_t voctCount() const { return voctCount_; }
+  // The three DAC outputs right now, in volts (cheap: no lock, plain floats).
+  void cvNow(float &lfo, float &env, float &voct) const;
   synth::Sequencer &seq() { return seq_; }                      // 16-step sequencer
   PatchBank &patches() { return patches_; }                     // named patches A1..D8 in flash
   DataLog &log() { return log_; }                               // weeks, 1 per 10 s, in flash
@@ -101,6 +116,8 @@ class App {
   synth::PitchTracker pitch_;
   History<Sample, 600> history_;
   History<NoteEvent, 20> events_;
+  History<VoctEvent, 32> voctLog_;
+  volatile uint32_t voctCount_ = 0;
   DataLog log_;
   PatchBank patches_;
 

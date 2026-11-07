@@ -83,6 +83,11 @@ void WebUi::begin(Print &log) {
     seqJson(d);
     serializeJson(d, out);
     ws.sendTXT(client, out);
+    d.clear();
+    out = "";
+    notesJson(d, 0);  // the whole note log (last 32)
+    serializeJson(d, out);
+    ws.sendTXT(client, out);
   });
   ws.begin();
 }
@@ -97,7 +102,10 @@ void WebUi::loop() {
 // not thread-safe, so the engine task never sends itself: it only bumps the sequencer's epoch
 // counter, and we notice the change here (a few ms later at most).
 void WebUi::push() {
-  if (ws.connectedClients() == 0) return;  // nobody listening: skip the JSON work
+  if (ws.connectedClients() == 0) {  // nobody listening: skip the JSON work
+    notesSent_ = app_.voctCount();   // a new page gets the whole log when it connects
+    return;
+  }
   uint32_t now = millis();
   JsonDocument d;
   String out;
@@ -106,6 +114,34 @@ void WebUi::push() {
     seqEpoch_ = s.epoch;
     lastSeqPush_ = now;
     seqJson(d);
+    serializeJson(d, out);
+    ws.broadcastTXT(out);
+  }
+  // CV scope: sample the three DAC outputs every 20 ms, send them 10 at a time.
+  if (now - lastCvMs_ >= 20) {
+    lastCvMs_ = now;
+    app_.cvNow(cv_[0][cvN_], cv_[1][cvN_], cv_[2][cvN_]);
+    if (++cvN_ == CV_PACK) {
+      cvN_ = 0;
+      d.clear();
+      out = "";
+      d["type"] = "cv";
+      d["dt"] = 20;
+      const char *names[3] = {"lfo", "env", "voct"};
+      for (int k = 0; k < 3; k++) {
+        JsonArray a = d[names[k]].to<JsonArray>();
+        for (int i = 0; i < CV_PACK; i++) a.add(roundf(cv_[k][i] * 1000) / 1000);  // mV is enough
+      }
+      serializeJson(d, out);
+      ws.broadcastTXT(out);
+    }
+  }
+  // New notes on the V/oct output since the last push.
+  if (app_.voctCount() != notesSent_) {
+    d.clear();
+    out = "";
+    notesJson(d, notesSent_);
+    notesSent_ = app_.voctCount();
     serializeJson(d, out);
     ws.broadcastTXT(out);
   }
@@ -145,6 +181,21 @@ void WebUi::liveJson(JsonDocument &d) {
   d["wifi"] = apMode_ ? "AP SynthPatch" : WiFi.SSID();
   d["rssi"] = apMode_ ? 0 : WiFi.RSSI();
   d["mqtt"] = mqtt.connected();
+}
+
+void WebUi::notesJson(JsonDocument &d, uint32_t after) {
+  d["type"] = "notes";
+  JsonArray list = d["list"].to<JsonArray>();
+  app_.voctLog().forEach([&](const VoctEvent &e) {
+    if (e.n <= after) return;
+    JsonObject o = list.add<JsonObject>();
+    o["n"] = e.n;
+    o["ms"] = e.ms;
+    o["note"] = e.note;
+    o["v"] = e.volts;
+    o["code"] = e.code;
+    o["src"] = e.src;
+  });
 }
 
 // Where the sequencer is: the page counts the next steps itself with its own clock.

@@ -30,7 +30,9 @@ main{padding:12px;display:grid;gap:12px}
 .mod h2{margin:0 0 10px;font-size:12px;letter-spacing:.2em;color:var(--dim);display:flex;justify-content:space-between;align-items:center}
 .mod h2 b{color:var(--text)}
 .wide{grid-column:1/-1}
-#scope,#adsr{height:130px} #chart{height:240px}
+#scope,#adsr{height:130px} #chart{height:240px} #cvs{height:220px}
+#notes{font:12px ui-monospace,Menlo,Consolas,monospace;max-height:220px;overflow:auto;color:#bbb;min-width:300px}
+#notes b{color:var(--accent)}
 canvas{display:block;width:100%;background:#0d0e10;border-radius:6px;border:1px solid #000}
 .knobs{display:flex;flex-wrap:wrap;justify-content:space-around;gap:6px;margin-top:10px}
 .knob{display:flex;flex-direction:column;align-items:center;width:74px;user-select:none;touch-action:none;cursor:ns-resize}
@@ -111,6 +113,12 @@ a{color:#9fb3c8}
  transposed so the bottom C = the key you pressed.</p>
  <label class="hint"><input type="checkbox" id="tonek" checked> keys also play the note on the test tone (GPIO 17 → 13)</label>
  <div class="keys" id="keys"></div></section>
+
+<section class="mod"><h2><b>OUTPUTS</b><span>what the DACs send out, last 10 s · <span style="color:#f0a020">LFO</span> ·
+ <span style="color:#59ff7a">ENV</span> · <span style="color:#4ea1ff">V/oct</span></span></h2>
+ <div class="row" style="align-items:stretch;flex-wrap:nowrap">
+  <canvas id="cvs" style="flex:1"></canvas>
+  <div id="notes"></div></div></section>
 
 <section class="mod"><h2><b>MONITOR</b><span id="outs"></span></h2>
  <div class="kpis">
@@ -359,17 +367,41 @@ function draw(){
  g.fillStyle="#889";g.font=`${11*r}px system-ui`;g.textAlign="left";g.fillText(fmt(t0),40*r,Ht-4*r);
  g.textAlign="right";g.fillText(fmt(t1),W-40*r,Ht-4*r);
 }
-$("series").onchange=draw;addEventListener("resize",()=>{draw();redraw();});
+$("series").onchange=draw;addEventListener("resize",()=>{draw();redraw();drawCv();});
 const live=()=>$("range").value=="0";
 async function loadRange(){H=await (await fetch(live()?"/api/history":`/api/log?hours=${$("range").value}&points=800`)).json();draw();}
 $("range").onchange=loadRange;
+
+// ================= OUTPUTS: CV scope + V/oct note log =================
+// The ESP samples the three DAC outputs every 20 ms and pushes them 10 at a time ("cv"), and
+// pushes every note it sends to the V/oct DAC ("notes"). We keep the last 10 s = 500 samples.
+const CVN=500, CV={lfo:[],env:[],voct:[]}; let NOTES=[];
+function onCv(m){for(const k of ["lfo","env","voct"]){CV[k].push(...m[k]);if(CV[k].length>CVN)CV[k].splice(0,CV[k].length-CVN);}drawCv();}
+function onNotes(m){NOTES=NOTES.concat(m.list).slice(-32);
+ $("notes").innerHTML=NOTES.slice().reverse().map(e=>`${(e.ms/1000).toFixed(2).padStart(8)} s  <b>${nn(e.note).padEnd(3)}</b> ${e.v.toFixed(3)} V  code ${String(e.code).padStart(5)}  ${e.src}`).join("<br>")||"no notes yet";}
+function drawCv(){
+ const{g,W,H,r}=canvas("cvs"),lane=H/3,X=i=>i/(CVN-1)*W;
+ g.fillStyle="#0d0e10";g.fillRect(0,0,W,H);g.font=`${10*r}px system-ui`;
+ const lanes=[["lfo","#f0a020","LFO 0..3.3 V"],["env","#59ff7a","ENV 0..3.3 V"],["voct","#4ea1ff","V/oct"]];
+ lanes.forEach(([k,col,label],li)=>{
+  const top=li*lane,a=CV[k],off=CVN-a.length;if(li){g.strokeStyle="#222";g.beginPath();g.moveTo(0,top);g.lineTo(W,top);g.stroke();}
+  let lo=0,hi=3.3;
+  if(k=="voct"&&a.length){lo=Math.min(...a)-.1;hi=Math.max(...a)+.1;}            // zoom in on the notes played
+  const Y=v=>top+lane-4*r-(v-lo)/(hi-lo)*(lane-8*r);
+  g.strokeStyle=col;g.lineWidth=1.5*r;g.beginPath();a.forEach((v,i)=>i?g.lineTo(X(i+off),Y(v)):g.moveTo(X(i+off),Y(v)));g.stroke();
+  g.fillStyle="#667";g.fillText(label,4*r,top+12*r);
+  if(k=="voct"){g.fillStyle=col;let last=null;                                    // note name at every change
+   a.forEach((v,i)=>{const n=Math.round(v*12)+36;if(n!==last&&i>0){g.fillText(nn(n),X(i+off)+2*r,Y(v)-3*r);}last=n;});}
+ });
+}
 
 // ================= WEBSOCKET: the ESP pushes, the page listens =================
 // One connection that stays open (port 81). Messages: {"type":"live",...} every second and
 // {"type":"seq",...} when the sequencer changes. If WiFi drops, try again every 2 s.
 function connectWs(){
  const sock=new WebSocket(`ws://${location.hostname}:81/`);
- sock.onmessage=e=>{const m=JSON.parse(e.data);if(m.type=="live")onLive(m);else if(m.type=="seq")onSeq(m);};
+ sock.onmessage=e=>{const m=JSON.parse(e.data);if(m.type=="live")onLive(m);else if(m.type=="seq")onSeq(m);
+  else if(m.type=="cv")onCv(m);else if(m.type=="notes")onNotes(m);};
  sock.onclose=()=>{$("net").textContent="offline, reconnecting…";setTimeout(connectWs,2000);};
 }
 

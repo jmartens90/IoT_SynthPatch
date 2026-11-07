@@ -53,11 +53,7 @@ void App::begin() {
 
   // ---- sequencer: its notes go to V/oct, its gates to the envelope + gate output ----
   // These slots run in the engine task (the sequencer is ticked there).
-  seq_.noteOut.connect([this](int midi) {
-    voct_.setVolts(noteToVolts(midi));
-    std::lock_guard<std::mutex> lock(liveMutex_);
-    live_.voctNote = midi;
-  });
+  seq_.noteOut.connect([this](int midi) { outputNote(midi, "seq"); });
   seq_.gateOut.connect([this](bool on) { gate(on, "seq"); });
 
   // ---- engine: one LFO, one envelope, scaled to the 0..3.3 V of the breadboard DACs ----
@@ -111,12 +107,26 @@ void App::gate(bool on, const char *source) {
 }
 
 void App::playNote(int midi, bool on, const char *source) {
-  if (on) {
-    voct_.setVolts(noteToVolts(midi));
+  if (on) outputNote(midi, source);
+  gate(on, source);
+}
+
+// Every note that goes to the V/oct DAC passes here, so the log is complete.
+// Called from the engine task (sequencer) and the loop task (web, shell): History has its own lock.
+void App::outputNote(int midi, const char *source) {
+  voct_.setVolts(noteToVolts(midi));
+  {
     std::lock_guard<std::mutex> lock(liveMutex_);
     live_.voctNote = midi;
   }
-  gate(on, source);
+  voctLog_.push({voctCount_ + 1, static_cast<uint32_t>(millis()), midi, voct_.last(), voct_.code(), source});
+  voctCount_ = voctCount_ + 1;
+}
+
+void App::cvNow(float &lfo, float &env, float &voct) const {
+  lfo = lfoDac_.last();
+  env = envOut_ == &envDac_ ? envDac_.last() : envPwm_.last();
+  voct = voct_.last();
 }
 
 bool App::calibrateVoct(uint16_t c1, float v1, uint16_t c2, float v2) {

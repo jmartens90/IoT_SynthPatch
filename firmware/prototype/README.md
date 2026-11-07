@@ -33,6 +33,9 @@ Wiring: [WIRING.md](WIRING.md).
   BOOT button or a rising edge on GPIO 5 restarts it at step 1. A key on the web keyboard (with no
   step selected) restarts it transposed: the steps are written relative to C3, so pressing E3 plays
   everything 4 semitones up. The sequence is saved in the patch; shell `seq` prints the steps.
+* **Outputs view:** a 10-second scope of the three DAC outputs (LFO, envelope, V/oct with note
+  names), sampled every 20 ms on the ESP, and a log of every note sent to V/oct (time, note,
+  volts, DAC code, source). Both arrive over the WebSocket.
 * **Dashboard + interaction:** web page at `http://synthpatch.local` with live values, a 10-minute
   chart (temperature + drift / Hz / volts, note changes as lines), LFO and envelope controls, gate
   button and a keyboard. CSV download of the log.

@@ -84,7 +84,7 @@ static void command(const String &line) {
     MqttLink::forget();
     ESP.restart();
   } else if (c == "note" && w.size() == 2) {
-    app.setVoctVolts(App::noteToVolts(arg(1).toInt()));
+    app.outputNote(arg(1).toInt(), "shell");
     Serial.printf("  %.4f V -> code %u\n", App::noteToVolts(arg(1).toInt()), app.voct().code());
   } else if (c == "voct" && arg(1) == "gain" && w.size() == 3) {
     bool ok = app.setVoctGain2(arg(2) == "2");

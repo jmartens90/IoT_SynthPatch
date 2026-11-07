@@ -8,6 +8,10 @@
 //     starts, stops, restarts or changes tempo (+ every 5 s against clock drift). No polling.
 //       {"type":"live", ...same fields as /api/live...}
 //       {"type":"seq","run":true,"pos":0,"len":8,"step_ms":125,"in_ms":0,"tr":4}
+//       {"type":"cv","dt":20,"lfo":[..10],"env":[..],"voct":[..]}   the 3 DAC outputs, 50x per s,
+//                                                                  sent in packs of 10 (5x per s)
+//       {"type":"notes","list":[{"n":7,"ms":1234,"note":60,"v":2.0,"code":26214,"src":"seq"}]}
+//                                                                  every note sent to V/oct
 //
 //   GET  /                      the GUI (WebPage.h)
 //   GET  /api/live              live values (the page gets them over the WebSocket)
@@ -46,7 +50,11 @@ class WebUi {
   void liveJson(JsonDocument &d);  // the live values, for /api/live and the WebSocket
   void seqJson(JsonDocument &d);   // the sequencer position, for /api/seq/pos and the WebSocket
   void push();                     // called from loop(): send over the WebSocket when needed
-  uint32_t lastLivePush_ = 0, lastSeqPush_ = 0;
+  void notesJson(JsonDocument &d, uint32_t after);  // V/oct notes with n > after
+  uint32_t lastLivePush_ = 0, lastSeqPush_ = 0, lastCvMs_ = 0, notesSent_ = 0;
+  static constexpr int CV_PACK = 10;  // samples per "cv" message
+  float cv_[3][CV_PACK] = {};
+  int cvN_ = 0;
   unsigned seqEpoch_ = ~0u;        // the sequencer epoch we last pushed (~0 = none yet)
   App &app_;  // a reference member: must be set in the constructor, can never be null
   bool apMode_ = false;
