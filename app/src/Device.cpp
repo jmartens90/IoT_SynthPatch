@@ -6,6 +6,8 @@
 #include <QTimer>
 #include <QUrl>
 
+#include <limits>
+
 static constexpr int CV_KEEP = 500;  // 10 s of CV at one sample per 20 ms
 
 Device::Device(QObject *parent) : QObject(parent) {
@@ -19,6 +21,8 @@ Device::Device(QObject *parent) : QObject(parent) {
       refreshAll();
     } else {
       pending_.clear();  // answers to old requests will never come
+      // cvNext_ stays: after a reconnect the ESP goes on counting, so the time we were away
+      // shows as a gap in the plot (see onCv).
     }
   });
 }
@@ -68,18 +72,48 @@ void Device::onMessage(const QJsonObject &m) {
     seqStamp_ = QDateTime::currentMSecsSinceEpoch();
     emit seqStateChanged();
   } else if (type == QLatin1String("cv")) {
-    for (const char *k : {"lfo", "env", "voct"}) {
-      QVariantList list = cv_.value(k).toList();
-      list.append(m.value(k).toArray().toVariantList());
-      if (list.size() > CV_KEEP) list = list.mid(list.size() - CV_KEEP);
-      cv_.insert(k, list);
-    }
-    emit cvChanged();
+    onCv(m);
   } else if (type == QLatin1String("notes")) {
     notes_.append(m.value("list").toArray().toVariantList());
     if (notes_.size() > 32) notes_ = notes_.mid(notes_.size() - 32);
     emit notesChanged();
   }
+}
+
+// "cv": {"i":1234,"dt":20,"lfo":[..],"env":[..],"voct":[..]}. "i" is the ESP's running number of
+// the first sample. Samples are put at their own index: a hole (a lost message, or the time the
+// link was down) becomes NaN in the lists, so the plot leaves a gap there instead of gluing two
+// different moments together (that made the jump in the sine).
+void Device::onCv(const QJsonObject &m) {
+  static const char *keys[3] = {"lfo", "env", "voct"};
+  QVariantList lists[3];
+  for (int k = 0; k < 3; k++) lists[k] = cv_.value(keys[k]).toList();
+  QJsonArray in[3];
+  for (int k = 0; k < 3; k++) in[k] = m.value(keys[k]).toArray();
+  int n = in[0].size(), skip = 0;
+  const QJsonValue iv = m.value("i");
+  if (iv.isDouble() && cvNext_ >= 0) {  // an older ESP sends no "i": then just append
+    const qint64 i = qint64(iv.toDouble());
+    if (i > cvNext_) {  // a hole: fill it with NaN (at most one screen)
+      const int gap = int(qMin<qint64>(i - cvNext_, CV_KEEP));
+      for (auto &l : lists)
+        for (int g = 0; g < gap; g++) l.append(std::numeric_limits<double>::quiet_NaN());
+    } else if (i < cvNext_ && cvNext_ - i < n) {
+      skip = int(cvNext_ - i);  // overlap: drop what we already have
+    } else if (i < cvNext_) {  // far back: the ESP restarted, start over
+      for (auto &l : lists) l.clear();
+    }
+  }
+  if (iv.isDouble()) cvNext_ = qint64(iv.toDouble()) + n;
+  else cvNext_ = qMax<qint64>(cvNext_, 0) + n;
+  for (int k = 0; k < 3; k++) {
+    for (int j = skip; j < in[k].size(); j++) lists[k].append(in[k].at(j).toDouble());
+    if (lists[k].size() > CV_KEEP) lists[k] = lists[k].mid(lists[k].size() - CV_KEEP);
+    cv_.insert(keys[k], lists[k]);
+  }
+  cv_.insert("end", double(cvNext_));  // index after the newest sample: the plot scrolls on it
+  cv_.insert("dt", m.value("dt").toInt(20));
+  emit cvChanged();
 }
 
 // ---------------------------------------------------------------------------------------------

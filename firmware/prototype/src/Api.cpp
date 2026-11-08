@@ -230,19 +230,6 @@ ApiReply Api::handle(const ApiRequest &r) {
 // Pushes
 // ---------------------------------------------------------------------------------------------
 
-void Api::tick() {
-  // CV scope: sample the three DAC outputs every 20 ms; every 10 samples a pack is complete.
-  uint32_t now = millis();
-  if (now - lastCvMs_ < 20) return;
-  lastCvMs_ = now;
-  app_.cvNow(cv_[0][cvN_], cv_[1][cvN_], cv_[2][cvN_]);
-  if (++cvN_ == CV_PACK) {
-    cvN_ = 0;
-    memcpy(cvPack_, cv_, sizeof(cv_));
-    cvPacks_++;
-  }
-}
-
 void Api::collect(PushState &st, const Send &send) {
   uint32_t now = millis();
   JsonDocument d;
@@ -254,15 +241,22 @@ void Api::collect(PushState &st, const Send &send) {
     seqJson(d);
     send(toString(d));
   }
-  if (cvPacks_ != st.cvSent && cvPacks_ % st.cvEvery == 0) {
-    st.cvSent = cvPacks_;
+  // CV scope: every sample after the last one this client got, with the index of the first
+  // one ("i"), so the receiver can put each sample at its true time and see any gap.
+  CvScope &scope = app_.scope();
+  if (scope.count() - st.cvSent >= static_cast<uint32_t>(CV_PACK)) {
+    float buf[CV_MAX][3];
+    uint32_t from = st.cvSent;
+    const int n = scope.read(from, CV_MAX, buf);
+    st.cvSent = from + n;
     d.clear();
     d["type"] = "cv";
-    d["dt"] = 20;
+    d["dt"] = CvScope::DT_MS;
+    d["i"] = from;
     const char *names[3] = {"lfo", "env", "voct"};
     for (int k = 0; k < 3; k++) {
       JsonArray a = d[names[k]].to<JsonArray>();
-      for (int i = 0; i < CV_PACK; i++) a.add(roundf(cvPack_[k][i] * 1000) / 1000);  // mV is enough
+      for (int j = 0; j < n; j++) a.add(roundf(buf[j][k] * 1000) / 1000);  // mV is enough
     }
     send(toString(d));
   }
@@ -281,7 +275,8 @@ void Api::collect(PushState &st, const Send &send) {
 }
 
 void Api::snapshot(PushState &st, const Send &send) {
-  st = PushState{0, 0, 0, cvPacks_, ~0u, st.cvEvery};
+  st = PushState{};
+  st.cvSent = app_.scope().count();  // CV from now on (the plot starts empty anyway)
   JsonDocument d;
   notesJson(d, 0);  // the whole note log (last 32)
   st.notesSent = app_.voctCount();

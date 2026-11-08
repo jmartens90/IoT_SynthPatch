@@ -42,7 +42,8 @@ class BleLink {
   bool connected() const { return connected_; }
 
   // Called by the NimBLE callbacks (NimBLE's own task).
-  void onConnect();
+  void onConnect(uint16_t connHandle);
+  void onSubscribe(bool on);
   void onDisconnect();
   void onMtu(uint16_t mtu) { mtu_ = mtu; }
   void onWrite(const std::string &data);
@@ -59,7 +60,8 @@ class BleLink {
   std::mutex m_;                 // protects the fields written by the NimBLE task:
   std::string rxBuf_;            //   bytes received, not yet a full line
   std::deque<std::string> rxLines_;
-  volatile bool connected_ = false, justConnected_ = false;
+  volatile bool connected_ = false, subscribed_ = false, justConnected_ = false;
+  volatile uint16_t connHandle_ = 0;
   volatile uint16_t mtu_ = 23;   // BLE default; the phone usually asks for more
 
   std::string txBuf_;            // bytes waiting to be notified (loop task only)

@@ -62,12 +62,11 @@ class Api {
 
   // ---- pushes ----
   struct PushState {
-    uint32_t lastLive = 0, lastSeq = 0, notesSent = 0, cvSent = 0;
+    uint32_t lastLive = 0, lastSeq = 0, notesSent = 0;
+    uint32_t cvSent = 0;   // scope index of the next CV sample this client still needs
     unsigned seqEpoch = ~0u;
-    uint32_t cvEvery = 1;  // send every Nth CV pack (BLE is slower than WiFi)
   };
   using Send = std::function<void(const String &)>;
-  void tick();                                // once per loop(): samples the CV scope
   void collect(PushState &st, const Send &send);  // send whatever is due for this client
   void snapshot(PushState &st, const Send &send); // a new client: send everything now
 
@@ -78,9 +77,6 @@ class Api {
   static String toString(const JsonDocument &d);
 
   App &app_;
-  static constexpr int CV_PACK = 10;  // samples per "cv" message (10 x 20 ms = 200 ms)
-  float cv_[3][CV_PACK] = {};
-  float cvPack_[3][CV_PACK] = {};     // the last complete pack
-  int cvN_ = 0;
-  uint32_t cvPacks_ = 0, lastCvMs_ = 0;
+  static constexpr int CV_PACK = 10;  // send "cv" once 10 new samples are there (200 ms)
+  static constexpr int CV_MAX = 25;   // at most 25 samples per message (catching up after a stall)
 };

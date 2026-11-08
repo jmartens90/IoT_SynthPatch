@@ -13,6 +13,7 @@
 #include <string>
 
 #include "DataLog.h"
+#include "CvScope.h"
 #include "Engine.h"
 #include "History.h"
 #include "Inputs.h"
@@ -92,6 +93,7 @@ class App {
   uint32_t voctCount() const { return voctCount_; }
   // The three DAC outputs right now, in volts (cheap: no lock, plain floats).
   void cvNow(float &lfo, float &env, float &voct) const;
+  CvScope &scope() { return scope_; }                           // the outputs every 20 ms (engine task)
   synth::Sequencer &seq() { return seq_; }                      // 16-step sequencer
   PatchBank &patches() { return patches_; }                     // named patches A1..D8 in flash
   DataLog &log() { return log_; }                               // weeks, 1 per 10 s, in flash
@@ -139,5 +141,6 @@ class App {
   uint32_t lastBlockMs_ = 0, lastTempMs_ = 0, lastLogMs_ = 0;
   bool btnWasDown_ = false;
   bool trigWasHigh_ = false;  // trigger input, read in the engine task
+  CvScope scope_;
   volatile unsigned noteCount_ = 0;
 };

@@ -42,4 +42,5 @@ class DemoEsp : public QObject {
   bool gate_ = false;
   qint64 gateOff_ = 0;
   QJsonArray cv_[3], notes_;
+  qint64 cvIndex_ = 0;  // running number of the next CV sample, like the ESP's "i"
 };

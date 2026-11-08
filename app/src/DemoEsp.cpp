@@ -84,7 +84,8 @@ void DemoEsp::tick20ms() {
   cv_[1].append(qRound(env_ * 1000) / 1000.0);
   cv_[2].append((curNote_ - 36) / 12.0);
   if (cv_[0].size() >= 10) {
-    emit message({{"type", "cv"}, {"dt", 20}, {"lfo", cv_[0]}, {"env", cv_[1]}, {"voct", cv_[2]}});
+    emit message({{"type", "cv"}, {"dt", 20}, {"i", cvIndex_}, {"lfo", cv_[0]}, {"env", cv_[1]}, {"voct", cv_[2]}});
+    cvIndex_ += cv_[0].size();
     for (auto &c : cv_) c = QJsonArray();
   }
   if (ticks_ % 250 == 0) emit message(seqMsg());  // at the start and every 5 s, like the ESP

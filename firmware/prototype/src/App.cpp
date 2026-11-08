@@ -87,6 +87,7 @@ void App::begin() {
 void App::engineTask(void *self) {
   App *app = static_cast<App *>(self);  // a FreeRTOS task gets a void*; we passed `this`
   TickType_t last = xTaskGetTickCount();
+  int scopeTicks = 0;
   for (;;) {
     // Trigger input: checked every 1 ms here, so a trigger is never more than 1 ms late.
     // (An interrupt would be faster, but trigger() locks a mutex, which an ISR may not do.)
@@ -96,6 +97,12 @@ void App::engineTask(void *self) {
 
     app->seq_.tick(0.001f);  // may post gate commands: run it before the engine executes them
     app->engine_.tick(0.001f);
+    if (++scopeTicks == CvScope::DT_MS) {  // scope sample: exactly every 20 ms
+      scopeTicks = 0;
+      float lfo, env, voct;
+      app->cvNow(lfo, env, voct);
+      app->scope_.add(lfo, env, voct);
+    }
     vTaskDelayUntil(&last, pdMS_TO_TICKS(1));  // exactly every 1 ms (FreeRTOS tick = 1 kHz)
   }
 }

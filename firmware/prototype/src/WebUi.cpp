@@ -98,6 +98,7 @@ void WebUi::loop() {
   // engine task never sends anything itself.
   if (ws.connectedClients() == 0) {
     push_.notesSent = app_.voctCount();  // nobody listening (a new page gets a snapshot instead)
+    push_.cvSent = app_.scope().count();
     return;
   }
   api_.collect(push_, [](const String &msg) {
