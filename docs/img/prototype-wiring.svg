@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="940" viewBox="0 0 1260 940" font-family="Helvetica, Arial, sans-serif">
+<rect width="1260" height="940" fill="#fff"/>
+<text x="30" y="36" font-size="20" text-anchor="start" fill="#222" font-weight="bold">IoT_SYNTHPATCH test setup: wiring diagram (aansluitschema)</text>
+<text x="30" y="58" font-size="13" text-anchor="start" fill="#6b7280" font-weight="normal">ESP32-S3 DevKitC (N16R8) on a breadboard. All signals 3.3 V. Pins from firmware/prototype/include/config.h</text>
+<rect x="40" y="90" width="330" height="800" rx="8" fill="#eef2ff" stroke="#222" stroke-width="2"/>
+<text x="205.0" y="112" font-size="15" text-anchor="middle" fill="#222" font-weight="bold">ESP32-S3 DevKitC</text>
+<text x="205.0" y="130" font-size="12" text-anchor="middle" fill="#6b7280" font-weight="normal">N16R8 test kit (PCB: N16R2)</text>
+<text x="56" y="380" font-size="13" text-anchor="start" fill="#222" font-weight="bold">USB-C (UART port)</text>
+<text x="56" y="398" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">to PC: 5 V + serial</text>
+<text x="56" y="416" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal"></text>
+<text x="56" y="434" font-size="13" text-anchor="start" fill="#222" font-weight="bold">WiFi: AP 'SynthPatch'</text>
+<text x="56" y="452" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">or home network,</text>
+<text x="56" y="470" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">synthpatch.local</text>
+<text x="56" y="488" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal"></text>
+<text x="56" y="506" font-size="13" text-anchor="start" fill="#222" font-weight="bold">BLE: Android app</text>
+<text x="56" y="524" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal"></text>
+<text x="56" y="542" font-size="13" text-anchor="start" fill="#222" font-weight="bold">BOOT button GPIO 0</text>
+<text x="56" y="560" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">= envelope gate /</text>
+<text x="56" y="578" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">sequencer restart</text>
+<circle cx="370" cy="130" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="134" font-size="12" text-anchor="end" fill="#222" font-weight="normal">3V3</text>
+<circle cx="370" cy="160" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="164" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GND</text>
+<circle cx="370" cy="225" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="229" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 38 (SDA)</text>
+<circle cx="370" cy="250" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="254" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 14 (SCL)</text>
+<circle cx="370" cy="345" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="349" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 8 (ADC in)</text>
+<circle cx="370" cy="565" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="569" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 16 (DHT)</text>
+<circle cx="370" cy="620" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="624" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 2 (PWM)</text>
+<circle cx="370" cy="700" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="704" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 13 (freq in)</text>
+<circle cx="370" cy="740" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="744" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 17 (test tone)</text>
+<circle cx="370" cy="800" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="804" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 4 (gate out)</text>
+<circle cx="370" cy="855" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="361" y="859" font-size="12" text-anchor="end" fill="#222" font-weight="normal">GPIO 5 (trig in)</text>
+<polyline points="370,130 410,130" fill="none" stroke="#d62828" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="416" y="134" font-size="12" text-anchor="start" fill="#d62828" font-weight="bold">3V3 rail (red)</text>
+<polyline points="370,160 410,160" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="416" y="164" font-size="12" text-anchor="start" fill="#222" font-weight="bold">GND rail (black)</text>
+<rect x="650" y="90" width="280" height="100" rx="8" fill="#f8fafc" stroke="#222" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="790.0" y="112" font-size="15" text-anchor="middle" fill="#222" font-weight="bold">SHT45 (optional)</text>
+<text x="790.0" y="130" font-size="12" text-anchor="middle" fill="#6b7280" font-weight="normal">STEMMA QT, I2C 0x44</text>
+<polyline points="670,90 670,72" fill="none" stroke="#d62828" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="670" y="68" font-size="11" text-anchor="middle" fill="#d62828" font-weight="bold">3V3</text>
+<polyline points="714,90 714,72" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="714" y="68" font-size="11" text-anchor="middle" fill="#222" font-weight="bold">GND</text>
+<circle cx="650" cy="150" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="154" font-size="12" text-anchor="start" fill="#222" font-weight="normal">SDA</text>
+<circle cx="650" cy="172" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="176" font-size="12" text-anchor="start" fill="#222" font-weight="normal">SCL</text>
+<rect x="650" y="230" width="280" height="100" rx="8" fill="#f8fafc" stroke="#222" stroke-width="2"/>
+<text x="790.0" y="252" font-size="15" text-anchor="middle" fill="#222" font-weight="bold">MCP4725 #1</text>
+<text x="790.0" y="270" font-size="12" text-anchor="middle" fill="#6b7280" font-weight="normal">12-bit DAC, I2C 0x60 (A0 to GND)</text>
+<polyline points="670,230 670,212" fill="none" stroke="#d62828" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="670" y="208" font-size="11" text-anchor="middle" fill="#d62828" font-weight="bold">3V3</text>
+<polyline points="714,230 714,212" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="714" y="208" font-size="11" text-anchor="middle" fill="#222" font-weight="bold">GND</text>
+<circle cx="650" cy="290" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="294" font-size="12" text-anchor="start" fill="#222" font-weight="normal">SDA</text>
+<circle cx="650" cy="312" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="316" font-size="12" text-anchor="start" fill="#222" font-weight="normal">SCL</text>
+<rect x="650" y="380" width="280" height="100" rx="8" fill="#f8fafc" stroke="#222" stroke-width="2"/>
+<text x="790.0" y="402" font-size="15" text-anchor="middle" fill="#222" font-weight="bold">AD5693R</text>
+<text x="790.0" y="420" font-size="12" text-anchor="middle" fill="#6b7280" font-weight="normal">16-bit DAC, I2C 0x4C, gain 2</text>
+<polyline points="670,380 670,362" fill="none" stroke="#d62828" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="670" y="358" font-size="11" text-anchor="middle" fill="#d62828" font-weight="bold">3V3</text>
+<polyline points="714,380 714,362" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="714" y="358" font-size="11" text-anchor="middle" fill="#222" font-weight="bold">GND</text>
+<circle cx="650" cy="440" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="444" font-size="12" text-anchor="start" fill="#222" font-weight="normal">SDA</text>
+<circle cx="650" cy="462" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="466" font-size="12" text-anchor="start" fill="#222" font-weight="normal">SCL</text>
+<polyline points="520,150 520,440" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="540,172 540,462" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="520,150 650,150" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="520" cy="150" r="4" fill="#1d4ed8"/>
+<polyline points="540,172 650,172" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="540" cy="172" r="4" fill="#15803d"/>
+<polyline points="520,290 650,290" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="520" cy="290" r="4" fill="#1d4ed8"/>
+<polyline points="540,312 650,312" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="540" cy="312" r="4" fill="#15803d"/>
+<polyline points="520,440 650,440" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="520" cy="440" r="4" fill="#1d4ed8"/>
+<polyline points="540,462 650,462" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="540" cy="462" r="4" fill="#15803d"/>
+<polyline points="370,225 520,225" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="520" cy="225" r="4" fill="#1d4ed8"/>
+<polyline points="370,250 540,250" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="540" cy="250" r="4" fill="#15803d"/>
+<text x="512" y="205" font-size="12" text-anchor="end" fill="#6b7280" font-weight="normal">I2C 400 kHz</text>
+<circle cx="930" cy="290" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="921" y="294" font-size="12" text-anchor="end" fill="#222" font-weight="normal">VOUT</text>
+<polyline points="930,290 1030,290" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="1030" cy="290" r="9" fill="#fff" stroke="#7c3aed" stroke-width="2.5"/><circle cx="1030" cy="290" r="3" fill="#7c3aed"/>
+<text x="1046" y="295" font-size="13" text-anchor="start" fill="#7c3aed" font-weight="bold">LFO OUT</text>
+<text x="1030" y="316" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">0…3.3 V, centre 1.65 V</text>
+<polyline points="990,290 990,345 370,345" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round" stroke-dasharray="7 5"/>
+<circle cx="990" cy="290" r="4" fill="#7c3aed"/>
+<text x="385" y="362" font-size="12" text-anchor="start" fill="#7c3aed" font-weight="normal">optional: LFO back into ADC</text>
+<circle cx="930" cy="440" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="921" y="444" font-size="12" text-anchor="end" fill="#222" font-weight="normal">VOUT</text>
+<polyline points="930,440 1030,440" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="1030" cy="440" r="9" fill="#fff" stroke="#7c3aed" stroke-width="2.5"/><circle cx="1030" cy="440" r="3" fill="#7c3aed"/>
+<text x="1046" y="445" font-size="13" text-anchor="start" fill="#7c3aed" font-weight="bold">V/OCT OUT</text>
+<text x="1030" y="466" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">0…3.3 V, 0 V = C2</text>
+<text x="920" y="472" font-size="11" text-anchor="end" fill="#6b7280" font-weight="normal">VOUT = hole of the 3.5 mm terminal</text>
+<rect x="650" y="520" width="280" height="80" rx="8" fill="#f8fafc" stroke="#222" stroke-width="2"/>
+<text x="790.0" y="542" font-size="15" text-anchor="middle" fill="#222" font-weight="bold">DHT11 (used now)</text>
+<text x="790.0" y="560" font-size="12" text-anchor="middle" fill="#6b7280" font-weight="normal">temperature + humidity, 1 °C steps</text>
+<polyline points="670,520 670,502" fill="none" stroke="#d62828" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="670" y="498" font-size="11" text-anchor="middle" fill="#d62828" font-weight="bold">3V3</text>
+<polyline points="714,520 714,502" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="714" y="498" font-size="11" text-anchor="middle" fill="#222" font-weight="bold">GND</text>
+<circle cx="650" cy="577" r="4" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="659" y="581" font-size="12" text-anchor="start" fill="#222" font-weight="normal">DATA</text>
+<polyline points="370,565 590,565 590,577 650,577" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-linejoin="round"/>
+<text x="390" y="557" font-size="11" text-anchor="start" fill="#6b7280" font-weight="normal">bare 4-pin DHT11: 10 k from DATA to 3V3</text>
+<polyline points="370,620 438.0,620" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="482.0,620 550,620" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<rect x="438.0" y="612" width="44" height="16" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="460.0" y="607" font-size="11" text-anchor="middle" fill="#222" font-weight="normal">10 kΩ</text>
+<polyline points="550,620 1030,620" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="600" cy="620" r="4" fill="#222"/>
+<polyline points="600,620 600,638.5" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="600,646.5 600,665" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="588,638.5 612,638.5" fill="none" stroke="#222" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="588,646.5 612,646.5" fill="none" stroke="#222" stroke-width="3" stroke-linejoin="round"/>
+<text x="616" y="646.5" font-size="11" text-anchor="start" fill="#222" font-weight="normal">1 µF</text>
+<polyline points="588,665 612,665" fill="none" stroke="#222" stroke-width="2.5" stroke-linejoin="round"/>
+<polyline points="593,670 607,670" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="597,675 603,675" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="1030" cy="620" r="9" fill="#fff" stroke="#7c3aed" stroke-width="2.5"/><circle cx="1030" cy="620" r="3" fill="#7c3aed"/>
+<text x="1046" y="625" font-size="13" text-anchor="start" fill="#7c3aed" font-weight="bold">ENV OUT</text>
+<text x="1030" y="646" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">PWM + RC (or MCP4725 #2 at 0x61)</text>
+<polyline points="370,700 650,700" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="370,740 420,740 420,700" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="6 4"/>
+<circle cx="420" cy="700" r="4" fill="#ea580c"/>
+<text x="428" y="744" font-size="12" text-anchor="start" fill="#ea580c" font-weight="normal">test: jumper wire 17 → 13</text>
+<rect x="650" y="670" width="280" height="52" rx="8" fill="#f8fafc" stroke="#222" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="790.0" y="692" font-size="15" text-anchor="middle" fill="#222" font-weight="bold">Oscillator 0…3.3 V square</text>
+<text x="790.0" y="714" font-size="11" text-anchor="middle" fill="#6b7280" font-weight="normal">40106 RC osc. or VCO via comparator</text>
+<polyline points="430,800 498.0,800" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="542.0,800 610,800" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<rect x="498.0" y="792" width="44" height="16" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="520.0" y="787" font-size="11" text-anchor="middle" fill="#222" font-weight="normal">1 kΩ</text>
+<polyline points="370,800 430,800" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="610,800 1030,800" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="1030" cy="800" r="9" fill="#fff" stroke="#222" stroke-width="2.5"/><circle cx="1030" cy="800" r="3" fill="#222"/>
+<text x="1046" y="805" font-size="13" text-anchor="start" fill="#222" font-weight="bold">GATE OUT</text>
+<text x="1030" y="826" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">0 / 3.3 V</text>
+<polyline points="370,855 520,855" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="520" cy="855" r="4" fill="#222"/>
+<polyline points="520,855 623.0,855" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="667.0,855 770,855" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<rect x="623.0" y="847" width="44" height="16" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="645.0" y="842" font-size="11" text-anchor="middle" fill="#222" font-weight="normal">10 kΩ</text>
+<polyline points="770,855 1030,855" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="1030" cy="855" r="9" fill="#fff" stroke="#222" stroke-width="2.5"/><circle cx="1030" cy="855" r="3" fill="#222"/>
+<text x="1046" y="860" font-size="13" text-anchor="start" fill="#222" font-weight="bold">TRIG IN</text>
+<text x="1030" y="881" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">Eurorack gate 5…10 V</text>
+<polyline points="520,855 520,863.0" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="520,903.0 520,911" fill="none" stroke="#222" stroke-width="2.2" stroke-linejoin="round"/>
+<rect x="512" y="863.0" width="16" height="40" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="534" y="887.0" font-size="11" text-anchor="start" fill="#222" font-weight="normal">4.7 kΩ</text>
+<polyline points="508,911 532,911" fill="none" stroke="#222" stroke-width="2.5" stroke-linejoin="round"/>
+<polyline points="513,916 527,916" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="517,921 523,921" fill="none" stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+<text x="382" y="847" font-size="11" text-anchor="start" fill="#6b7280" font-weight="normal">max 3.3 V on the pin</text>
+<text x="40" y="925" font-size="12" text-anchor="start" fill="#6b7280" font-weight="normal">Dashed = optional.  Blue = SDA, green = SCL, purple = analog outputs.</text>
+</svg>

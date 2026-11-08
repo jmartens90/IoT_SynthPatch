@@ -1,23 +1,80 @@
 # IoT_SYNTHPATCH
 
-A WiFi-connected Eurorack module: an ESP32-S3 generates LFO and envelope control voltages that you
-set from a web/mobile dashboard or directly on the module's TFT screen and encoder. It also measures
-the frequency of an oscillator patched into its PCM1808 input, tells played notes apart from tuning
-drift, and graphs that drift together with the temperature from an SHT45 sensor.
+A WiFi-connected Eurorack module: an ESP32-S3 generates LFO, envelope and V/oct control voltages
+that you set from a web dashboard (HTTP REST + WebSocket) or an Android app (Bluetooth). It also
+measures the frequency of an oscillator, tells played notes apart from tuning drift, and logs that
+drift together with the temperature in its own flash memory. No server, broker or Raspberry Pi
+needed: the module is the server.
 
-Built for the IoT course project. Rubric mapping, architecture and roadmap:
-[docs/iot-project-plan.md](docs/iot-project-plan.md).
+Built for the IoT Technologie course. Problem statement, block diagram, technology choices, rubric
+and what works / doesn't work yet: **[docs/iot-project-plan.md](docs/iot-project-plan.md)**.
+
+## Status
+
+* **Current test setup (interim evaluation):** ESP32-S3 DevKitC on a breadboard with a DHT11
+  temperature sensor and I2C DACs (MCP4725, AD5693R). Firmware: [`firmware/prototype`](firmware/prototype).
+* **PCB:** designed in Altium (main board + analog board), ordered, waiting for parts. See
+  [section 4 of the project plan](docs/iot-project-plan.md#4-planned-with-the-pcb-final-evaluation).
+
+## Wiring diagram (test setup)
+
+![Wiring diagram](docs/img/prototype-wiring.png)
+
+Pin table and alternatives (SHT45, DS18B20, 2nd MCP4725, oscillator circuits):
+[firmware/prototype/WIRING.md](firmware/prototype/WIRING.md). The PCB wiring diagram is the
+schematic set in [`hardware/`](hardware).
+
+## Install
+
+You need: an ESP32-S3 dev kit with 16 MB flash, the parts in the diagram, a USB-C cable, and
+[VS Code](https://code.visualstudio.com/) with the **PlatformIO** extension (or `pip install platformio`).
+
+1. Clone this repository and switch to this branch:
+   ```
+   git clone https://github.com/jmartens90/iot_synthpatch.git
+   cd iot_synthpatch
+   git checkout prototype-setup
+   ```
+2. Wire the parts as in the diagram above.
+3. Build and flash (the first build downloads the ESP32 toolchain):
+   ```
+   cd firmware/prototype
+   pio run -t upload
+   pio device monitor        # serial shell, type: help
+   ```
+4. Optional: the Android app, see [app/README.md](app/README.md) (Qt 6, or `--demo` on the PC
+   without an ESP).
+
+## Use
+
+1. **First boot** opens the WiFi access point **SynthPatch** (password `synthpatch`). Join it and
+   browse to **http://192.168.4.1**.
+2. To use your home network, type in the serial shell: `wifi set <ssid> <password>`. After the
+   reboot the dashboard is at **http://synthpatch.local** and the time comes from NTP.
+3. On the dashboard:
+   * the **Monitor** tab shows the live temperature (°C), humidity (%), frequency, note and cents;
+     its chart shows the last 10 minutes live, or 1 h … 46 days from the flash log, with a CSV download;
+   * the Synth tab sets the LFO and envelope (the outputs follow), the Seq tab runs the sequencer,
+     Patches stores 32 named settings, Outputs shows a scope of the DAC outputs.
+4. Quick test without an oscillator: put a jumper wire from GPIO 17 to GPIO 13 and play the web
+   keyboard; the test tone is measured and the notes appear in the chart.
+5. Useful shell commands: `status` (found sensors and DACs), `log` (stored records), `seq`.
+
+REST API, flash layout, V/oct calibration and a code tour: [firmware/prototype/README.md](firmware/prototype/README.md).
 
 ## Repository
 
 | Folder | Contents |
 |---|---|
-| [`hardware/`](hardware) | Altium projects: main board `IoT_SYNTHPATCH.PrjPcb`, analog board `ANALOG/`, Gerbers in `Project Outputs*`, Mouser BOM |
-| [`firmware/`](firmware) | ESP32-S3 firmware (PlatformIO). `bringup/` = hardware test shell |
-| [`docs/`](docs) | [Bring-up test plan](docs/bringup-test-plan.md), [IoT project plan](docs/iot-project-plan.md), [Firmware architecture + UML](docs/firmware-architecture.md) |
-| `backend/` | (planned) Docker compose: Mosquitto, API, PostgreSQL, dashboard |
+| [`firmware/prototype/`](firmware/prototype) | **Test setup firmware** (PlatformIO): sensors, edge processing, REST + WebSocket + BLE, web dashboard, flash log |
+| [`firmware/synthpatch/`](firmware/synthpatch) | Shared engine (LFO, envelope, sequencer, pitch tracker) in plain C++17, with PC tests |
+| [`firmware/bringup/`](firmware/bringup) | Hardware test shell for the PCB ([bring-up test plan](docs/bringup-test-plan.md)) |
+| [`app/`](app) | Android app (Qt 6, C++/QML) over Bluetooth LE |
+| [`hardware/`](hardware) | Altium projects: main board `IoT_SYNTHPATCH.PrjPcb`, analog board `ANALOG/`, Gerbers, BOM |
+| [`docs/`](docs) | [Project plan + rubric](docs/iot-project-plan.md), [firmware architecture + UML](docs/firmware-architecture.md), [bring-up test plan](docs/bringup-test-plan.md), wiring diagram |
+| `backend/` | Optional, not used: MQTT broker + logger for a possible central server later |
 
-## Hardware at a glance
+## PCB hardware at a glance
 
 | Block | Part | ESP32-S3 pins |
 |---|---|---|
@@ -32,9 +89,4 @@ Built for the IoT course project. Rubric mapping, architecture and roadmap:
 | Temperature / humidity (J21, STEMMA QT) | SHT45 | SDA 38, SCL 14 |
 | Status LED DS3 | | 1 |
 
-The full wiring diagram is the schematic set in `hardware/` (export a PDF from Altium for the report).
-
-## Getting started
-
-1. Assemble and run the [bring-up test plan](docs/bringup-test-plan.md).
-2. Build and flash the firmware: see [firmware/README.md](firmware/README.md).
+For the PCB: run the [bring-up test plan](docs/bringup-test-plan.md), then see [firmware/README.md](firmware/README.md).
