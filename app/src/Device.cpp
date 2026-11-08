@@ -199,7 +199,11 @@ void Device::setShape(const QString &target, const QString &shape) {
 
 void Device::gate(bool on) { post(QStringLiteral("/api/gate?on=%1").arg(on ? 1 : 0)); }
 
-void Device::playNote(int note, bool on) { post(QStringLiteral("/api/note?n=%1&on=%2").arg(note).arg(on ? 1 : 0)); }
+// tone=1: the ESP also plays the note on the test tone (GPIO 17), like the web page's default,
+// so with 17 jumpered to 13 the pitch tracker (Monitor tab) has something to hear.
+void Device::playNote(int note, bool on) {
+  post(QStringLiteral("/api/note?n=%1&on=%2&tone=1").arg(note).arg(on ? 1 : 0));
+}
 
 void Device::seqRun(bool on) { post(QStringLiteral("/api/seq/run?on=%1").arg(on ? 1 : 0)); }
 
