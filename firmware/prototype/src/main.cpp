@@ -7,6 +7,7 @@
 #include "App.h"
 #include "BleLink.h"
 #include "MqttLink.h"
+#include "LoopTiming.h"
 #include "WebUi.h"
 
 App app;
@@ -30,7 +31,8 @@ static void help() {
       "  tone <hz>                      test tone on GPIO 17 (0 = off)\n"
       "  gate on|off\n"
       "  seq start|stop|trig            sequencer (trig = restart at step 1)\n"
-      "  log | log clear                flash log info / erase it");
+      "  log | log clear                flash log info / erase it\n"
+      "  timing                         how long each part of loop() takes (finds stalls)");
 }
 
 static void status() {
@@ -107,6 +109,12 @@ static void command(const String &line) {
     Serial.printf("  %.4f V -> code %u\n", arg(1).toFloat(), app.voct().code());
   } else if (c == "tone") {
     app.setToneHz(arg(1).toFloat());
+  } else if (c == "timing") {
+    LoopTiming &lt = LoopTiming::instance();
+    Serial.println("  longest time per loop() part, in ms:   last 10 s   since boot");
+    for (int st = 0; st <= LoopTiming::STAGES; st++)
+      Serial.printf("  %-24s %10.1f %12.1f\n", st < LoopTiming::STAGES ? LoopTiming::name(st) : "whole loop",
+                    lt.last10sMs(st), lt.worstMs(st));
   } else if (c == "log" && arg(1) == "clear") {
     app.log().clear();
     Serial.println("  log erased");
@@ -145,10 +153,16 @@ void setup() {
 }
 
 void loop() {
+  LoopTiming &lt = LoopTiming::instance();
+  lt.begin();
   app.loop();
+  lt.mark(LoopTiming::APP);
   web.loop();
+  lt.mark(LoopTiming::WEB);
   ble.loop();
+  lt.mark(LoopTiming::BLE);
   mqtt.loop();
+  lt.mark(LoopTiming::MQTT);
 
   static String line;
   while (Serial.available()) {
@@ -161,5 +175,7 @@ void loop() {
       line += ch;
     }
   }
+  lt.mark(LoopTiming::SHELL);
+  lt.end();
   delay(1);
 }

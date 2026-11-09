@@ -5,6 +5,7 @@ import QtQuick.Layouts
 
 Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
+    readonly property bool shown: SwipeView.isCurrentItem   // the live dot only moves when you look
     readonly property var lfo: device.settings.lfo1 || {}
     readonly property var env: device.settings.env1 || {}
     function range(key) { return device.ranges[key] || { min: 0, max: 1 } }
@@ -30,7 +31,8 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                 id: scope
                 Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 50
                 property real out: device.live.lfo_v || 0
-                onOutChanged: requestPaint()
+                onOutChanged: if (page.shown) requestPaint()
+                Connections { target: page; function onShownChanged() { if (page.shown) scope.requestPaint() } }
                 Connections { target: device; function onSettingsChanged() { scope.requestPaint() } }
                 onPaint: {
                     const g = getContext("2d"), W = width, H = height, L = page.lfo

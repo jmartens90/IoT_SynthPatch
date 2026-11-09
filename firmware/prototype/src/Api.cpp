@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "App.h"
+#include "LoopTiming.h"
 #include "SeqJson.h"
 
 using synth::Command;
@@ -307,6 +308,7 @@ void Api::liveJson(JsonDocument &d) {
   d["uptime"] = millis() / 1000;
   d["time"] = App::timeValid() ? static_cast<uint32_t>(time(nullptr)) : 0;
   d["log_count"] = app_.log().count();
+  d["loop_ms"] = LoopTiming::instance().lastSecondMs();  // longest loop() of the last second
   if (netInfo) netInfo(d);
 }
 

@@ -436,27 +436,52 @@ $("range").onchange=loadRange;
 // ================= OUTPUTS: CV scope + V/oct note log =================
 // The ESP samples the three DAC outputs every 20 ms and pushes them 10 at a time ("cv"), and
 // pushes every note it sends to the V/oct DAC ("notes"). We keep the last 10 s = 500 samples.
-const CVN=500, CV={lfo:[],env:[],voct:[]}; let NOTES=[];
-function onCv(m){for(const k of ["lfo","env","voct"]){CV[k].push(...m[k]);if(CV[k].length>CVN)CV[k].splice(0,CV[k].length-CVN);}drawCv();}
+// Each sample has a number ("i" = the number of the first in a message), so it is drawn at its
+// own time: a lost message leaves a gap (NaN) instead of gluing two moments together. Drawing
+// each message as it came made the plot jump 200 ms at a time, unevenly: instead a play head
+// (CVHEAD, the sample at the right edge) moves on with the clock every frame, CVLAG samples
+// (400 ms) behind the newest one, so late messages don't make it stop.
+const CVN=500, CVLAG=20, CV={lfo:[],env:[],voct:[]}; let NOTES=[], CVEND=-1, CVHEAD=-1, cvT=0;
+function onCv(m){const n=m.lfo.length;let skip=0;
+ if(m.i!==undefined&&CVEND>=0){
+  if(m.i>CVEND){const gap=Math.min(m.i-CVEND,CVN);for(const k in CV)for(let j=0;j<gap;j++)CV[k].push(NaN);}  // a hole
+  else if(m.i<CVEND&&CVEND-m.i<n)skip=CVEND-m.i;                // overlap: we have those already
+  else if(m.i<CVEND)for(const k in CV)CV[k].length=0;}          // far back: the ESP restarted
+ CVEND=m.i!==undefined?m.i+n:Math.max(CVEND,0)+n;
+ for(const k of ["lfo","env","voct"]){CV[k].push(...m[k].slice(skip));if(CV[k].length>CVN)CV[k].splice(0,CV[k].length-CVN);}}
+function animCv(t){
+ requestAnimationFrame(animCv);
+ const dt=(t-cvT)/(1000*.02);cvT=t;                             // frames' time in samples (20 ms)
+ if(CVEND<0||!$("t-outputs").classList.contains("cur"))return;   // only while you can see it
+ if(CVHEAD<0||CVHEAD<CVEND-4*CVLAG||CVHEAD>CVEND)CVHEAD=CVEND-CVLAG;  // start, or after a long stop
+ else CVHEAD=Math.min(CVEND,CVHEAD+dt+(CVEND-CVLAG-CVHEAD)*Math.min(1,.3*dt*.02));  // clock + gentle pull to the lag
+ drawCv();}
+requestAnimationFrame(animCv);
 function onNotes(m){NOTES=NOTES.concat(m.list).slice(-32);
  $("notes").innerHTML=NOTES.slice().reverse().map(e=>`${(e.ms/1000).toFixed(2).padStart(8)} s  <b>${nn(e.note).padEnd(3)}</b> ${e.v.toFixed(3)} V  code ${String(e.code).padStart(5)}  ${e.src}`).join("<br>")||"no notes yet";}
 function drawCv(){
- const{g,W,H,r}=canvas("cvs"),X=i=>i/(CVN-1)*W;
+ // resize only when needed (setting the size clears and reallocates the canvas: not every frame)
+ const c=$("cvs"),r=devicePixelRatio,W=Math.round(c.clientWidth*r),H=Math.round(c.clientHeight*r);
+ if(c.width!==W||c.height!==H){c.width=W;c.height=H;}
+ const g=c.getContext("2d"),hd=CVHEAD>=0?CVHEAD:CVEND,first=CVEND-CV.lfo.length;
+ const X=i=>W-(hd-(first+i))/(CVN-1)*W;                          // i = index in the arrays
  const LH=[H*.25,H*.25,H*.5],LT=[0,H*.25,H*.5];         // V/oct gets half the height (it's a piano roll)
  g.fillStyle="#0d0e10";g.fillRect(0,0,W,H);g.font=`${10*r}px system-ui`;
  const lanes=[["lfo","#f0a020","LFO 0..3.3 V"],["env","#59ff7a","ENV 0..3.3 V"],["voct","#4ea1ff","V/oct"]];
  lanes.forEach(([k,col,label],li)=>{
-  const top=LT[li],lane=LH[li],a=CV[k],off=CVN-a.length;if(li){g.strokeStyle="#222";g.beginPath();g.moveTo(0,top);g.lineTo(W,top);g.stroke();}
+  const top=LT[li],lane=LH[li],a=CV[k];if(li){g.strokeStyle="#222";g.beginPath();g.moveTo(0,top);g.lineTo(W,top);g.stroke();}
   let lo=0,hi=3.3;
   if(k=="voct"){                                       // piano roll: one block per held note
-   const ns=a.map(v=>Math.round(v*12)+36);if(ns.length){
-   const nlo=Math.min(...ns)-1,nhi=Math.max(...ns)+1,rh=(lane-16*r)/(nhi-nlo+1),YN=n=>top+14*r+(nhi-n)*rh;
+   const ns=a.map(v=>isNaN(v)?NaN:Math.round(v*12)+36),real=ns.filter(n=>!isNaN(n));if(real.length){
+   const nlo=Math.min(...real)-1,nhi=Math.max(...real)+1,rh=(lane-16*r)/(nhi-nlo+1),YN=n=>top+14*r+(nhi-n)*rh;
    g.font=`${Math.min(11,rh/r)*r}px system-ui`;
    // A block = same note AND the envelope open (the note sounds). While the envelope is closed
    // V/oct just holds its last value: drawn as a faint line.
    const on=i=>(CV.env[i]??0)>.02;
-   for(let i=0;i<ns.length;){let j=i;while(j<ns.length&&ns[j]==ns[i]&&on(j)==on(i))j++;
-    const x0=X(i+off),x1=X(j+off),y=YN(ns[i]),h=Math.max(3*r,rh-2*r);
+   const same=(i,j)=>(isNaN(ns[i])&&isNaN(ns[j]))||(ns[j]==ns[i]&&on(j)==on(i));
+   for(let i=0;i<ns.length;){let j=i;while(j<ns.length&&same(i,j))j++;
+    if(isNaN(ns[i])){i=j;continue;}                              // a gap: nothing
+    const x0=X(i),x1=X(j),y=YN(ns[i]),h=Math.max(3*r,rh-2*r);
     if(on(i)){g.fillStyle=col;g.fillRect(x0+1,y,Math.max(2,x1-x0-2),h);
      g.strokeStyle="#bfe0ff";g.strokeRect(x0+1,y,Math.max(2,x1-x0-2),h);
      if(x1-x0>22*r&&h>8*r){g.fillStyle="#001";g.fillText(nn(ns[i]),x0+3*r,y+h-2*r);}}
@@ -464,7 +489,8 @@ function drawCv(){
     i=j;}}
    g.fillStyle="#667";g.font=`${10*r}px system-ui`;g.fillText(label,4*r,top+12*r);return;}
   const Y=v=>top+lane-4*r-(v-lo)/(hi-lo)*(lane-8*r);
-  g.strokeStyle=col;g.lineWidth=1.5*r;g.beginPath();a.forEach((v,i)=>i?g.lineTo(X(i+off),Y(v)):g.moveTo(X(i+off),Y(v)));g.stroke();
+  g.strokeStyle=col;g.lineWidth=1.5*r;g.beginPath();let pen=false;   // NaN lifts the pen: a gap
+  a.forEach((v,i)=>{if(isNaN(v)){pen=false;return;}pen?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v));pen=true;});g.stroke();
   g.fillStyle="#667";g.fillText(label,4*r,top+12*r);
  });
 }

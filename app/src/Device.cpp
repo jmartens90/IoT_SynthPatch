@@ -67,6 +67,7 @@ void Device::onMessage(const QJsonObject &m) {
   } else if (type == QLatin1String("live")) {
     live_ = m.toVariantMap();
     emit liveChanged();
+    appendLiveHistory(m);
   } else if (type == QLatin1String("seq")) {
     seqState_ = m.toVariantMap();
     seqStamp_ = QDateTime::currentMSecsSinceEpoch();
@@ -86,33 +87,30 @@ void Device::onMessage(const QJsonObject &m) {
 // different moments together (that made the jump in the sine).
 void Device::onCv(const QJsonObject &m) {
   static const char *keys[3] = {"lfo", "env", "voct"};
-  QVariantList lists[3];
-  for (int k = 0; k < 3; k++) lists[k] = cv_.value(keys[k]).toList();
   QJsonArray in[3];
   for (int k = 0; k < 3; k++) in[k] = m.value(keys[k]).toArray();
-  int n = in[0].size(), skip = 0;
+  const int n = in[0].size();
+  int skip = 0;
   const QJsonValue iv = m.value("i");
   if (iv.isDouble() && cvNext_ >= 0) {  // an older ESP sends no "i": then just append
     const qint64 i = qint64(iv.toDouble());
     if (i > cvNext_) {  // a hole: fill it with NaN (at most one screen)
       const int gap = int(qMin<qint64>(i - cvNext_, CV_KEEP));
-      for (auto &l : lists)
-        for (int g = 0; g < gap; g++) l.append(std::numeric_limits<double>::quiet_NaN());
+      for (auto &l : cv_) l.insert(l.size(), gap, std::numeric_limits<double>::quiet_NaN());
     } else if (i < cvNext_ && cvNext_ - i < n) {
       skip = int(cvNext_ - i);  // overlap: drop what we already have
     } else if (i < cvNext_) {  // far back: the ESP restarted, start over
-      for (auto &l : lists) l.clear();
+      for (auto &l : cv_) l.clear();
     }
   }
   if (iv.isDouble()) cvNext_ = qint64(iv.toDouble()) + n;
   else cvNext_ = qMax<qint64>(cvNext_, 0) + n;
   for (int k = 0; k < 3; k++) {
-    for (int j = skip; j < in[k].size(); j++) lists[k].append(in[k].at(j).toDouble());
-    if (lists[k].size() > CV_KEEP) lists[k] = lists[k].mid(lists[k].size() - CV_KEEP);
-    cv_.insert(keys[k], lists[k]);
+    QList<double> &l = cv_[k];
+    for (int j = skip; j < in[k].size(); j++) l.append(in[k].at(j).toDouble());
+    if (l.size() > CV_KEEP) l.remove(0, l.size() - CV_KEEP);
   }
-  cv_.insert("end", double(cvNext_));  // index after the newest sample: the plot scrolls on it
-  cv_.insert("dt", m.value("dt").toInt(20));
+  cvDt_ = m.value("dt").toInt(20);
   emit cvChanged();
 }
 
@@ -167,7 +165,32 @@ void Device::loadPatches() {
   });
 }
 
+// The "live (10 min)" chart: loaded once from /api/history, then every live push (1 per s, the
+// same values the ESP puts in its RAM history) is added here. Before, the whole 10 minutes
+// (~25 kB) was fetched again every 5 s; over Bluetooth that held up the scope data for a second
+// or more each time.
+void Device::appendLiveHistory(const QJsonObject &m) {
+  if (!historyLive_ || history_.isEmpty() || !m.contains("uptime")) return;
+  QVariantList t = history_.value("t").toList();
+  const double now = m.value("uptime").toDouble();
+  if (!t.isEmpty() && now <= t.last().toDouble()) return;  // nothing new (or the ESP restarted)
+  auto add = [&](const char *key, const QJsonValue &v) {
+    QVariantList l = history_.value(key).toList();
+    l.append(v.isDouble() ? QVariant(v.toDouble()) : QVariant());  // null = no reading
+    if (l.size() > 600) l.remove(0, l.size() - 600);
+    history_.insert(key, l);
+  };
+  add("t", m.value("uptime"));
+  add("temp", m.value("temp_c"));
+  add("rh", m.value("rh"));
+  add("hz", m.value("hz"));
+  add("drift", m.value("drift"));
+  add("volts", m.value("volts"));
+  emit historyChanged();
+}
+
 void Device::loadHistory(double hours) {
+  historyLive_ = hours <= 0;
   const QString path = hours <= 0 ? QStringLiteral("/api/history")
                                   : QStringLiteral("/api/log?hours=%1&points=400").arg(hours);
   request("GET", path, {}, [this](int status, const QJsonValue &body) {

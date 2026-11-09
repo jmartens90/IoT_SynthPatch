@@ -38,7 +38,11 @@ class Device : public QObject {
   Q_PROPERTY(double seqStamp READ seqStamp NOTIFY seqStateChanged)       // when seqState arrived (ms)
   Q_PROPERTY(QVariantList patches READ patches NOTIFY patchesChanged)    // [{slot,label,name}]
   Q_PROPERTY(QVariantList notes READ notes NOTIFY notesChanged)          // V/oct note log, newest last
-  Q_PROPERTY(QVariantMap cv READ cv NOTIFY cvChanged)                    // {lfo:[..500],env:[..],voct:[..],end,dt}; NaN = gap
+  // The scope data (last 10 s of the 3 DAC outputs) stays in C++: ScopeView draws it from there.
+  // QML only needs where it ends. (A QVariantMap of 1500 numbers read from QML 30x per second
+  // made the JavaScript garbage collector stutter.)
+  Q_PROPERTY(double cvEnd READ cvEnd NOTIFY cvChanged)   // ESP sample number after the newest
+  Q_PROPERTY(int cvDt READ cvDt NOTIFY cvChanged)        // ms between samples (20)
   Q_PROPERTY(QVariantMap history READ history NOTIFY historyChanged)     // {t:[..],temp:[..],..}
 
  public:
@@ -55,7 +59,11 @@ class Device : public QObject {
   double seqStamp() const { return seqStamp_; }
   QVariantList patches() const { return patches_; }
   QVariantList notes() const { return notes_; }
-  QVariantMap cv() const { return cv_; }
+  double cvEnd() const { return cvNext_ < 0 ? 0 : double(cvNext_); }
+  int cvDt() const { return cvDt_; }
+  // For ScopeView (C++): channel 0 = LFO, 1 = envelope, 2 = V/oct; volts, NaN = gap. The last
+  // sample is number cvEnd() - 1.
+  const QList<double> &cvSeries(int ch) const { return cv_[ch]; }
   QVariantMap history() const { return history_; }
 
   // ---- called from QML ----
@@ -95,13 +103,17 @@ class Device : public QObject {
   void loadPattern();
   void loadPatches();
   void onCv(const QJsonObject &m);
+  void appendLiveHistory(const QJsonObject &m);
 
   BleLink link_;
   DemoEsp *demo_ = nullptr;  // only with --demo
   QString status_ = tr("not connected");
   int nextId_ = 1;
   QHash<int, Reply> pending_;  // request id -> what to do with the answer
-  QVariantMap live_, settings_, ranges_, pattern_, seqState_, cv_, history_;
+  QVariantMap live_, settings_, ranges_, pattern_, seqState_, history_;
+  QList<double> cv_[3];
+  int cvDt_ = 20;
+  bool historyLive_ = true;   // the Monitor chart shows the RAM history (it grows with live pushes)
   QVariantList patches_, notes_;
   double seqStamp_ = 0;
   qint64 cvNext_ = -1;  // ESP index of the next CV sample we expect (-1 = none yet)

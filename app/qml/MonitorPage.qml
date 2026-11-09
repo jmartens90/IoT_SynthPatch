@@ -21,10 +21,8 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
     property real hours: 0
     onShownChanged: if (shown) device.loadHistory(hours)
     onHoursChanged: device.loadHistory(hours)
-    Timer {   // the live range keeps growing: fetch it again every 5 s while you look at it
-        interval: 5000; repeat: true; running: page.shown && page.hours === 0 && device.connected
-        onTriggered: device.loadHistory(0)
-    }
+    // The live range grows by itself: Device adds every live push (1 per s) to it. (It used to
+    // fetch all 10 minutes again every 5 s, ~25 kB over Bluetooth, which held up everything else.)
 
     ColumnLayout {
         anchors { fill: parent; margins: 10 }
@@ -48,7 +46,9 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                         { k: "V/OCT OUT", v: page.fmt(lv.voct_v, 3, " V") + (lv.voct_note >= 0 ? " " + device.noteName(lv.voct_note) : "") },
                         { k: "LOG POINTS", v: lv.log_count !== undefined ? String(lv.log_count) : "–" },
                         { k: "CLOCK", v: lv.time ? new Date(lv.time * 1000).toLocaleTimeString(Qt.locale(), "HH:mm:ss") : "not set" },
-                        { k: "MQTT", v: lv.mqtt === undefined ? "–" : lv.mqtt ? "connected" : "off" }
+                        // longest ESP loop() of the last second: above ~100 ms something blocks it
+                        // (the shell command `timing` says which part)
+                        { k: "ESP LOOP MAX", v: page.fmt(lv.loop_ms, 0, " ms") }
                     ]
                     Rectangle {
                         Layout.fillWidth: true; Layout.preferredHeight: 48; radius: 6; color: "#1c1f23"
@@ -86,7 +86,7 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
             Canvas {
                 id: chart
                 Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 120
-                Connections { target: device; function onHistoryChanged() { chart.requestPaint() } }
+                Connections { target: device; function onHistoryChanged() { if (page.shown) chart.requestPaint() } }
                 onWidthChanged: requestPaint()
                 // One line, scaled to its own min..max. Gaps (null = no reading) break the line.
                 function drawLine(g, ts, vs, col, top, h, t0, t1, label) {

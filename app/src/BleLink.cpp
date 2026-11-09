@@ -2,6 +2,7 @@
 
 #include <QCoreApplication>
 #include <QJsonDocument>
+#include <QLowEnergyConnectionParameters>
 #include <QLowEnergyDescriptor>
 #include <QtGlobal>
 
@@ -96,6 +97,14 @@ void BleLink::setupService() {
     QLowEnergyDescriptor cccd = tx_.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
     svc_->writeDescriptor(cccd, QLowEnergyCharacteristic::CCCDEnableNotification);
     rxBuf_.clear();
+    // Ask for a short connection interval. Android's default (30..50 ms, "balanced") lets the
+    // ESP send only that often; on Android Qt turns this into CONNECTION_PRIORITY_HIGH
+    // (7.5..15 ms), so the scope data comes in sooner and more evenly. The ESP asks too.
+    QLowEnergyConnectionParameters fast;
+    fast.setIntervalRange(7.5, 15);
+    fast.setLatency(0);
+    fast.setSupervisionTimeout(2000);
+    ctl_->requestConnectionUpdate(fast);
     setState(State::Connected, tr("Bluetooth: connected to %1").arg(name_));
   });
   connect(svc_, &QLowEnergyService::characteristicChanged, this,
