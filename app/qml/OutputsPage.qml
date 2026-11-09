@@ -27,11 +27,27 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                 // numbers (device.cv.end = after the newest), so every sample sits at its own time.
                 property real head: -1      // sample number at the right edge
                 property double lastMs: 0
-                readonly property int lag: 12   // samples behind the newest (240 ms) to hide the packing
+                readonly property int lag: 20   // samples behind the newest (400 ms): room for late Bluetooth packs
+                // device.cv is a C++ map: every read of it makes a fresh JS copy of all 1500 samples.
+                // Read 30x per second, that garbage made the JavaScript engine pause to clean up,
+                // at regular intervals (the stutter). So it is copied once per new pack, here,
+                // together with everything the drawing needs that only changes with the data.
+                property var cv: ({})
+                property var notesN: []          // V/oct as MIDI note numbers (NaN = gap)
+                property int nlo: 0; property int nhi: 0
+                function takeCv() {
+                    const c = device.cv, a = c.voct || []
+                    const ns = a.map(v => isNaN(v) ? NaN : Math.round(v * 12) + 36)
+                    let lo = 999, hi = -999
+                    for (const n of ns) if (!isNaN(n)) { lo = Math.min(lo, n); hi = Math.max(hi, n) }
+                    cv = c; notesN = ns; nlo = lo - 1; nhi = hi + 1
+                }
+                Connections { target: device; function onCvChanged() { if (page.shown) cvs.takeCv() } }
+                Connections { target: page; function onShownChanged() { if (page.shown) cvs.takeCv() } }
                 Timer {
-                    interval: 33; repeat: true; running: page.shown && (device.cv.end || 0) > 0
+                    interval: 33; repeat: true; running: page.shown && (cvs.cv.end || 0) > 0
                     onTriggered: {
-                        const now = Date.now(), end = device.cv.end, dt = device.cv.dt || 20
+                        const now = Date.now(), end = cvs.cv.end, dt = cvs.cv.dt || 20
                         if (cvs.head < 0 || cvs.head < end - 4 * cvs.lag || cvs.head > end) cvs.head = end - cvs.lag   // start / after a stall
                         else {
                             cvs.head += (now - cvs.lastMs) / dt
@@ -43,7 +59,7 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                     }
                 }
                 onPaint: {
-                    const g = getContext("2d"), W = width, Hh = height, N = 500, CV = device.cv
+                    const g = getContext("2d"), W = width, Hh = height, N = 500, CV = cvs.cv
                     const hd = cvs.head >= 0 ? cvs.head : (CV.end || 0)
                     const first = (CV.end || 0) - (CV.lfo || []).length   // sample number of a[0]
                     const X = i => W - (hd - (first + i)) / (N - 1) * W   // i = index in the arrays
@@ -58,10 +74,9 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
                         if (k === "voct") {
                             // piano roll: a block while the envelope is open (the note sounds), a faint
                             // line while V/oct only holds its last value. NaN (a gap) draws nothing.
-                            const ns = a.map(v => isNaN(v) ? NaN : Math.round(v * 12) + 36)
-                            const real = ns.filter(n => !isNaN(n))
-                            if (real.length) {
-                                const nlo = Math.min(...real) - 1, nhi = Math.max(...real) + 1, rh = (lane - 16) / (nhi - nlo + 1)
+                            const ns = cvs.notesN
+                            if (cvs.nhi > cvs.nlo) {
+                                const nlo = cvs.nlo, nhi = cvs.nhi, rh = (lane - 16) / (nhi - nlo + 1)
                                 const YN = n => top + 14 + (nhi - n) * rh, on = i => (env[i] || 0) > .02
                                 const same = (i, j) => (isNaN(ns[i]) && isNaN(ns[j])) || (ns[j] === ns[i] && on(j) === on(i))
                                 for (let i = 0; i < ns.length;) {
@@ -97,7 +112,7 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
             ListView {   // newest first; shows as many lines as fit, no scrolling
                 Layout.fillWidth: true; Layout.preferredHeight: 150
                 interactive: false; clip: true
-                model: device.notes.slice().reverse()
+                model: device.notes.slice(-12).reverse()   // only what fits: fewer lines to rebuild per note
                 delegate: Text {
                     font.family: "monospace"; font.pixelSize: 11; color: "#c8ccd2"
                     text: (modelData.ms / 1000).toFixed(2).padStart(8) + " s  " + device.noteName(modelData.note).padEnd(4)
