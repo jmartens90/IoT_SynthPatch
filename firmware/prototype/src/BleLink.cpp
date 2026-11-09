@@ -11,7 +11,7 @@ static const char *TX_UUID = "6e5a0003-5b1d-4c2a-9e43-53594e544850";
 class ServerCallbacks : public NimBLEServerCallbacks {
  public:
   explicit ServerCallbacks(BleLink &l) : link_(l) {}
-  void onConnect(NimBLEServer *) override { link_.onConnect(); }
+  void onConnect(NimBLEServer *, ble_gap_conn_desc *desc) override { link_.onConnect(desc->conn_handle); }
   void onDisconnect(NimBLEServer *) override { link_.onDisconnect(); }  // advertising restarts by itself
   void onMTUChange(uint16_t mtu, ble_gap_conn_desc *) override { link_.onMtu(mtu); }
 
@@ -28,6 +28,19 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
   BleLink &link_;
 };
 
+// The app switches notifications on (writes the TX "CCCD"). Only from then on does it hear
+// anything, so the first snapshot is sent then, not at connect (it would be lost).
+class TxCallbacks : public NimBLECharacteristicCallbacks {
+ public:
+  explicit TxCallbacks(BleLink &l) : link_(l) {}
+  void onSubscribe(NimBLECharacteristic *, ble_gap_conn_desc *, uint16_t subValue) override {
+    link_.onSubscribe(subValue & 1);  // bit 0 = notifications on
+  }
+
+ private:
+  BleLink &link_;
+};
+
 void BleLink::begin(const char *name) {
   NimBLEDevice::init(name);
   NimBLEDevice::setMTU(247);  // ask for big packets (the phone decides)
@@ -37,25 +50,33 @@ void BleLink::begin(const char *name) {
   NimBLECharacteristic *rx = svc->createCharacteristic(RX_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR);
   rx->setCallbacks(new RxCallbacks(*this));
   tx_ = svc->createCharacteristic(TX_UUID, NIMBLE_PROPERTY::NOTIFY);
+  tx_->setCallbacks(new TxCallbacks(*this));
   svc->start();
   NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
   adv->addServiceUUID(SERVICE_UUID);  // the app scans for this UUID
   adv->setScanResponse(true);         // the name goes in the scan response
   adv->start();
-  push_.cvEvery = 1;  // all CV packs: ~300 bytes every 200 ms is fine for BLE
 }
 
-void BleLink::onConnect() {
+void BleLink::onConnect(uint16_t connHandle) {
   std::lock_guard<std::mutex> lock(m_);
   connected_ = true;
-  justConnected_ = true;
+  subscribed_ = false;
+  connHandle_ = connHandle;
   rxBuf_.clear();
   rxLines_.clear();
+}
+
+void BleLink::onSubscribe(bool on) {
+  std::lock_guard<std::mutex> lock(m_);
+  if (on && !subscribed_) justConnected_ = true;  // send the snapshot in loop()
+  subscribed_ = on;
 }
 
 void BleLink::onDisconnect() {
   std::lock_guard<std::mutex> lock(m_);
   connected_ = false;
+  subscribed_ = false;
   mtu_ = 23;
 }
 
@@ -71,7 +92,7 @@ void BleLink::onWrite(const std::string &data) {
 }
 
 void BleLink::loop() {
-  if (!connected_) {
+  if (!connected_ || !subscribed_) {  // nobody to notify (yet)
     txBuf_.clear();
     return;
   }
@@ -125,8 +146,11 @@ void BleLink::send(const String &msg) {
   txBuf_ += '\n';
 }
 
-// Notify a few pieces every 10 ms. NimBLE has a small number of packet buffers: sending
-// everything at once would drop pieces. ~4 x 244 bytes / 10 ms = ~90 kB/s at most.
+// Notify a few pieces every 10 ms. NimBLE has a small number of packet buffers (WiFi and BLE
+// share the radio, so they can stay full for a while). NimBLE's own notify() throws a piece
+// away when no buffer is free, without telling us: then a JSON line comes out broken and the
+// app drops it (a hole in the plot). So the host function is called directly, and a piece that
+// did not go out stays in the queue and is tried again 10 ms later.
 void BleLink::drain() {
   uint32_t now = millis();
   if (txBuf_.empty() || now - lastDrainMs_ < 10) return;
@@ -134,7 +158,9 @@ void BleLink::drain() {
   const size_t piece = mtu_ > 3 ? mtu_ - 3 : 20;
   for (int i = 0; i < 4 && !txBuf_.empty(); i++) {
     size_t n = std::min(piece, txBuf_.size());
-    tx_->notify(reinterpret_cast<const uint8_t *>(txBuf_.data()), n);
+    os_mbuf *om = ble_hs_mbuf_from_flat(txBuf_.data(), n);
+    if (!om) return;  // no buffer free: try again next time
+    if (ble_gatts_notify_custom(connHandle_, tx_->getHandle(), om) != 0) return;  // om is freed by NimBLE
     txBuf_.erase(0, n);
   }
 }

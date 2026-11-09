@@ -146,7 +146,6 @@ void setup() {
 
 void loop() {
   app.loop();
-  api.tick();  // samples the CV scope for both WiFi and Bluetooth
   web.loop();
   ble.loop();
   mqtt.loop();

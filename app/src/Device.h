@@ -38,7 +38,7 @@ class Device : public QObject {
   Q_PROPERTY(double seqStamp READ seqStamp NOTIFY seqStateChanged)       // when seqState arrived (ms)
   Q_PROPERTY(QVariantList patches READ patches NOTIFY patchesChanged)    // [{slot,label,name}]
   Q_PROPERTY(QVariantList notes READ notes NOTIFY notesChanged)          // V/oct note log, newest last
-  Q_PROPERTY(QVariantMap cv READ cv NOTIFY cvChanged)                    // {lfo:[..500],env:[..],voct:[..]}
+  Q_PROPERTY(QVariantMap cv READ cv NOTIFY cvChanged)                    // {lfo:[..500],env:[..],voct:[..],end,dt}; NaN = gap
   Q_PROPERTY(QVariantMap history READ history NOTIFY historyChanged)     // {t:[..],temp:[..],..}
 
  public:
@@ -94,6 +94,7 @@ class Device : public QObject {
   void loadSettings();
   void loadPattern();
   void loadPatches();
+  void onCv(const QJsonObject &m);
 
   BleLink link_;
   DemoEsp *demo_ = nullptr;  // only with --demo
@@ -103,4 +104,5 @@ class Device : public QObject {
   QVariantMap live_, settings_, ranges_, pattern_, seqState_, cv_, history_;
   QVariantList patches_, notes_;
   double seqStamp_ = 0;
+  qint64 cvNext_ = -1;  // ESP index of the next CV sample we expect (-1 = none yet)
 };
