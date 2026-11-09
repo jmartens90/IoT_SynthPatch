@@ -44,7 +44,10 @@ qt_add_qml_module(SynthPatchApp
         qml/PatchPage.qml
         qml/OutputsPage.qml
         qml/MonitorPage.qml
+    SOURCES
+        src/ScopeView.h src/ScopeView.cpp   # C++ QML type (QML_ELEMENT): the GPU-drawn Outputs plot
 )
+target_include_directories(SynthPatchApp PRIVATE src)
 
 set_target_properties(SynthPatchApp PROPERTIES
     QT_ANDROID_PACKAGE_NAME be.jokke.synthpatch

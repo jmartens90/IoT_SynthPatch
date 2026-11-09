@@ -20,6 +20,8 @@ import QtQuick.Layouts
 
 Item {   // no scrolling: everything fits the screen, so dragging a knob never moves the page
     id: page
+    readonly property bool shown: SwipeView.isCurrentItem   // only animate when you can see it
+    onShownChanged: if (shown) roll.requestPaint()
     readonly property var pat: device.pattern
     readonly property bool running: device.seqState.run === true
     property int selStep: -1          // step chosen for keyboard entry, -1 = keys transpose
@@ -51,7 +53,9 @@ Item {   // no scrolling: everything fits the screen, so dragging a knob never m
 
     // Running light: position = start step + steps passed since the ESP told us where it was.
     Timer {
-        interval: 25; repeat: true; running: page.visible
+        // only on this page: SwipeView keeps the other pages "visible" (just off screen), so with
+        // page.visible this redrew the piano roll at every step while you looked at Outputs
+        interval: 25; repeat: true; running: page.shown
         onTriggered: {
             const s = device.seqState
             let p = -1

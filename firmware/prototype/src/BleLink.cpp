@@ -11,7 +11,15 @@ static const char *TX_UUID = "6e5a0003-5b1d-4c2a-9e43-53594e544850";
 class ServerCallbacks : public NimBLEServerCallbacks {
  public:
   explicit ServerCallbacks(BleLink &l) : link_(l) {}
-  void onConnect(NimBLEServer *, ble_gap_conn_desc *desc) override { link_.onConnect(desc->conn_handle); }
+  void onConnect(NimBLEServer *server, ble_gap_conn_desc *desc) override {
+    link_.onConnect(desc->conn_handle);
+    // Ask the phone for a short connection interval (7.5..15 ms instead of Android's usual
+    // 30..50 ms): the ESP may send at every interval, so data arrives sooner and more evenly.
+    // Units: 1.25 ms; timeout in 10 ms. The phone decides in the end.
+    server->updateConnParams(desc->conn_handle, 6, 12, 0, 200);
+    // Long radio packets (251 bytes): one notification fits in one packet instead of ten.
+    server->setDataLen(desc->conn_handle, 251);
+  }
   void onDisconnect(NimBLEServer *) override { link_.onDisconnect(); }  // advertising restarts by itself
   void onMTUChange(uint16_t mtu, ble_gap_conn_desc *) override { link_.onMtu(mtu); }
 
