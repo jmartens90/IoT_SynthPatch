@@ -122,6 +122,10 @@ void App::playNote(int midi, bool on, const char *source) {
 // Called from the engine task (sequencer) and the loop task (web, shell): History has its own lock.
 void App::outputNote(int midi, const char *source) {
   voct_.setVolts(noteToVolts(midi));
+  // Once the test tone is on, it plays every note the V/oct output gets (sequencer too), like a
+  // VCO on the V/oct jack would. So with GPIO 17 jumpered to 13 the pitch tracker follows the
+  // notes instead of staying on the last key pressed. `tone 0` switches it off.
+  if (tone_.hz() > 0) tone_.setHz(440.0f * powf(2.0f, (midi - 69) / 12.0f));
   {
     std::lock_guard<std::mutex> lock(liveMutex_);
     live_.voctNote = midi;
