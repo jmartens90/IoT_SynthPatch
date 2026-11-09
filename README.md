@@ -11,7 +11,7 @@ and what works / doesn't work yet: **[docs/iot-project-plan.md](docs/iot-project
 
 ## Status
 
-* **Current test setup (interim evaluation):** ESP32-S3 DevKitC on a breadboard with a DHT11
+* **Current test setup:** ESP32-S3 DevKitC on a breadboard with a DHT11
   temperature sensor and I2C DACs (MCP4725, AD5693R). Firmware: [`firmware/prototype`](firmware/prototype).
 * **PCB:** designed in Altium (main board + analog board), ordered, waiting for parts. See
   [section 4 of the project plan](docs/iot-project-plan.md#4-planned-with-the-pcb-final-evaluation).
