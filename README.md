@@ -6,7 +6,7 @@ measures the frequency of an oscillator, tells played notes apart from tuning dr
 drift together with the temperature in its own flash memory. No server, broker or Raspberry Pi
 needed: the module is the server.
 
-Built for the IoT Technologie course. Problem statement, block diagram, technology choices, rubric
+Problem statement, block diagram, technology choices, rubric
 and what works / doesn't work yet: **[docs/iot-project-plan.md](docs/iot-project-plan.md)**.
 
 ## Status
